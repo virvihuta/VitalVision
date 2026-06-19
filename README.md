@@ -55,10 +55,15 @@ Upload → AI Analysis → PACS Archive → Cross-departmental Access
 ## Team
 
 Vertex:
+
 Aiden Hasanaj: Backend Development
+
 Atida Ashta: Data Science
+
 Ester Lelçi: Frontend Development
+
 Suisa Shehi: Frontend Development
+
 Virvi Huta: Data Science
 
 Built at JunctionX Tirana 2026 — Sfida Shëndetësi Digjitale.
