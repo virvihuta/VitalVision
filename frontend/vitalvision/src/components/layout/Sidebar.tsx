@@ -3,7 +3,6 @@ import {
   Activity,
   Bell,
   BarChart3,
-  Stethoscope,
   Users,
   Shield,
 } from "lucide-react";

@@ -36,27 +36,20 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
   const label = t(level, lang);
 
   const [displayScore, setDisplayScore] = useState(animate ? 0 : score);
-  const [mounted, setMounted] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!animate || !mounted) {
-      setDisplayScore(score);
-      return;
-    }
+    if (!animate) return;
 
     const duration = 900;
     const start = performance.now();
+    const fromScore = 0;
 
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayScore(Math.round(eased * score));
+      setDisplayScore(Math.round(fromScore + eased * (score - fromScore)));
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       }
@@ -66,7 +59,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [score, animate, mounted]);
+  }, [score, animate]);
 
   const radius = (size - 16) / 2;
   const circumference = 2 * Math.PI * radius;

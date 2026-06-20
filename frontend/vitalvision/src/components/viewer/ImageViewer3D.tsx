@@ -33,24 +33,20 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
     const mount = mountRef.current;
     const width = mount.clientWidth;
 
-    // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#070D1A");
     sceneRef.current = scene;
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.z = 3;
     cameraRef.current = camera;
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Texture
     const loader = new THREE.TextureLoader();
     loader.load(imageDataUrl, (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -58,12 +54,11 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
       const planeWidth = 2.4;
       const planeHeight = planeWidth / aspect;
 
-      // Shader for relief + brightness/contrast
       const material = new THREE.ShaderMaterial({
         uniforms: {
           uTexture: { value: texture },
-          uBrightness: { value: brightness },
-          uContrast: { value: contrast },
+          uBrightness: { value: 1.0 },
+          uContrast: { value: 1.2 },
           uDisplacement: { value: 0.25 },
         },
         vertexShader: `
@@ -99,7 +94,6 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
       scene.add(mesh);
     });
 
-    // Animation loop
     let frame: number;
     const animate = () => {
       if (meshRef.current) {
@@ -111,13 +105,12 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
     };
     animate();
 
-    // Pointer events
     const onDown = (e: PointerEvent) => {
       isDragging.current = true;
       lastPointer.current = { x: e.clientX, y: e.clientY };
     };
     const onMove = (e: PointerEvent) => {
-      if (!isDragging.current || !is3D) return;
+      if (!isDragging.current) return;
       const dx = e.clientX - lastPointer.current.x;
       const dy = e.clientY - lastPointer.current.y;
       rotation.current.y += dx * 0.01;
@@ -136,7 +129,6 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
     window.addEventListener("pointerup", onUp);
     renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
-    // Resize
     const onResize = () => {
       if (!mountRef.current) return;
       const w = mountRef.current.clientWidth;
@@ -158,7 +150,6 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
     };
   }, [imageDataUrl, height]);
 
-  // Update uniforms when sliders change
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.uBrightness.value = brightness;
