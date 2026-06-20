@@ -1,4 +1,4 @@
-export type UserRole = "radiologist" | "department" | "ops";
+export type UserRole = "radiologist" | "doctor" | "ops";
 export type Modality = "X-Ray" | "CT" | "MRI" | "Ultrasound";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type Language = "sq" | "en";
@@ -44,4 +44,11 @@ export interface AnalysisState {
   status: "idle" | "uploading" | "analyzing" | "done" | "error";
   progress: number;
   error?: string;
+}
+
+export interface CurrentUser {
+  id: string;
+  name: string;
+  role: UserRole;
+  hospital: string;
 }

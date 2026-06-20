@@ -11,8 +11,8 @@ interface RiskGaugeProps {
 }
 
 const RISK_COLORS: Record<RiskLevel, string> = {
-  low: "#10B981",
-  medium: "#F59E0B",
+  low: "#22D3EE",
+  medium: "#A855F7",
   high: "#F97316",
   critical: "#EF4444",
 };
@@ -34,6 +34,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
   const level = getRiskLevel(score);
   const color = RISK_COLORS[level];
   const label = t(level, lang);
+  const useAiGradient = level === "low" || level === "medium";
 
   const [displayScore, setDisplayScore] = useState(animate ? 0 : score);
   const rafRef = useRef<number | null>(null);
@@ -43,13 +44,12 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
 
     const duration = 900;
     const start = performance.now();
-    const fromScore = 0;
 
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayScore(Math.round(fromScore + eased * (score - fromScore)));
+      setDisplayScore(Math.round(eased * score));
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       }
@@ -67,6 +67,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
   const cx = size / 2;
   const cy = size / 2;
   const isCritical = level === "critical";
+  const gradId = `gauge-grad-${Math.round(score * 1000)}`;
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -81,13 +82,21 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
           />
         )}
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {useAiGradient && (
+            <defs>
+              <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#22D3EE" />
+                <stop offset="100%" stopColor="#A855F7" />
+              </linearGradient>
+            </defs>
+          )}
           <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#1A2740" strokeWidth="8" />
           <circle
             cx={cx}
             cy={cy}
             r={radius}
             fill="none"
-            stroke={color}
+            stroke={useAiGradient ? `url(#${gradId})` : color}
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -95,7 +104,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
             style={{
               transform: "rotate(-90deg)",
               transformOrigin: "center",
-              filter: isCritical ? `drop-shadow(0 0 4px ${color})` : "none",
+              filter: isCritical ? `drop-shadow(0 0 4px ${color})` : useAiGradient ? "drop-shadow(0 0 4px #A855F744)" : "none",
             }}
           />
         </svg>

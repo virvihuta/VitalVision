@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Upload, Activity, Loader2, ShieldCheck, X, FileImage } from "lucide-react";
+import { Upload, Sparkles, Loader2, ShieldCheck, X, FileImage } from "lucide-react";
 import type { DiagnosticReport, Modality } from "../../types";
 import { analyzeImage } from "../../api/anthropicApi";
 import { pacsStore } from "../../lib/pacsStore";
@@ -128,7 +128,7 @@ export const RadiologistView: React.FC = () => {
               value={patientName}
               onChange={(e) => setPatientName(e.target.value)}
               disabled={status === "analyzing" || status === "done"}
-              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-clinical-blue disabled:opacity-60"
+              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -137,13 +137,13 @@ export const RadiologistView: React.FC = () => {
                 value={patientAge}
                 onChange={(e) => setPatientAge(e.target.value)}
                 disabled={status === "analyzing" || status === "done"}
-                className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-clinical-blue disabled:opacity-60"
+                className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
               />
               <select
                 value={modality}
                 onChange={(e) => setModality(e.target.value as Modality)}
                 disabled={status === "analyzing" || status === "done"}
-                className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-clinical-blue disabled:opacity-60"
+                className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
               >
                 {MODALITIES.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -156,7 +156,7 @@ export const RadiologistView: React.FC = () => {
               value={bodyPart}
               onChange={(e) => setBodyPart(e.target.value)}
               disabled={status === "analyzing" || status === "done"}
-              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-clinical-blue disabled:opacity-60"
+              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
             />
           </div>
 
@@ -165,7 +165,7 @@ export const RadiologistView: React.FC = () => {
               onDrop={onDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="bg-navy-800 border-2 border-dashed border-navy-500 rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-clinical-blue transition-colors"
+              className="bg-navy-800 border-2 border-dashed border-navy-500 rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-ai-cyan transition-colors"
             >
               <Upload size={28} className="text-slate-500 mb-3" />
               <p className="text-sm text-slate-300">{t("dropImage", lang)}</p>
@@ -206,9 +206,9 @@ export const RadiologistView: React.FC = () => {
             <button
               onClick={runAnalysis}
               disabled={!canAnalyze}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium bg-clinical-blue text-white hover:bg-clinical-blue-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium bg-ai-gradient text-white shadow-lg shadow-ai-violet/20 hover:shadow-ai-violet/40 transition-shadow disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              <Activity size={16} />
+              <Sparkles size={16} />
               {t("runAnalysis", lang)}
             </button>
           )}
@@ -283,7 +283,8 @@ export const RadiologistView: React.FC = () => {
                   </div>
                   <div className="flex-1 space-y-3">
                     <div>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <Sparkles size={11} className="text-ai-cyan" />
                         {t("impression", lang)}
                       </p>
                       <p className="text-sm text-slate-200 leading-relaxed">{report.impression}</p>

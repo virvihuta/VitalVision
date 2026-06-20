@@ -21,7 +21,7 @@ interface SidebarProps {
 
 const ROLES: { id: UserRole; shortLabel: string }[] = [
   { id: "radiologist", shortLabel: "RAD" },
-  { id: "department", shortLabel: "DEP" },
+  { id: "doctor", shortLabel: "DOC" },
   { id: "ops", shortLabel: "OPS" },
 ];
 
@@ -30,7 +30,7 @@ const NAV_ITEMS: Record<UserRole, { id: string; labelKey: "newAnalysis" | "pacsA
     { id: "analyze", labelKey: "newAnalysis", icon: <Activity size={16} /> },
     { id: "archive", labelKey: "pacsArchive", icon: <Shield size={16} /> },
   ],
-  department: [
+  doctor: [
     { id: "search", labelKey: "patientSearch", icon: <Users size={16} /> },
     { id: "archive", labelKey: "sharedArchive", icon: <Shield size={16} /> },
   ],
@@ -38,6 +38,24 @@ const NAV_ITEMS: Record<UserRole, { id: string; labelKey: "newAnalysis" | "pacsA
     { id: "dashboard", labelKey: "dashboard", icon: <BarChart3 size={16} /> },
   ],
 };
+
+const ROLE_LABEL_KEY = {
+  radiologist: "roleRadiologist",
+  doctor: "roleDoctor",
+  ops: "roleOps",
+} as const;
+
+const ROLE_INITIALS = {
+  radiologist: "EB",
+  doctor: "AK",
+  ops: "VH",
+} as const;
+
+const ROLE_NAME = {
+  radiologist: "Dr. Erion Basha",
+  doctor: "Dr. Arta Koci",
+  ops: "Admin",
+} as const;
 
 export const Sidebar: React.FC<SidebarProps> = ({
   role,
@@ -53,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-56 flex-shrink-0 bg-navy-900 border-r border-navy-600 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-navy-600">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-clinical-blue rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-ai-gradient shadow-lg shadow-ai-violet/20">
             <Activity size={16} className="text-white" />
           </div>
           <div>
@@ -128,13 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-navy-600">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-navy-500 flex items-center justify-center text-xs font-medium text-slate-300">
-            {role === "radiologist" ? "EB" : role === "department" ? "AK" : "VH"}
+            {ROLE_INITIALS[role]}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-300 truncate">
-              {role === "radiologist" ? "Dr. Erion Basha" : role === "department" ? "Dr. Arta Koci" : "Admin"}
-            </p>
-            <p className="text-xs text-slate-500">{t(role === "radiologist" ? "roleRadiologist" : role === "department" ? "roleDepartment" : "roleOps", lang)}</p>
+            <p className="text-xs font-medium text-slate-300 truncate">{ROLE_NAME[role]}</p>
+            <p className="text-xs text-slate-500">{t(ROLE_LABEL_KEY[role], lang)}</p>
           </div>
           <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" title={t("online", lang)} />
         </div>

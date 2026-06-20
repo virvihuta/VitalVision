@@ -11,7 +11,7 @@ const translations = {
     dashboard: "Dashboard",
     sharedArchive: "Shared Archive",
     roleRadiologist: "Radiologist",
-    roleDepartment: "Department",
+    roleDoctor: "Doctor",
     roleOps: "Operations",
     uploadTitle: "New Analysis",
     uploadSubtitle: "Upload a medical image for AI-assisted diagnosis",
@@ -72,6 +72,9 @@ const translations = {
     searchPlaceholderArchive: "Search patient, ID, modality…",
     studiesArchived: "studies archived",
     online: "Online",
+    aiPowered: "AI-Powered",
+    liveActivity: "Live Activity",
+    systemOnline: "System Online",
   },
   sq: {
     appName: "VitalVision",
@@ -83,7 +86,7 @@ const translations = {
     dashboard: "Paneli",
     sharedArchive: "Arkivi i Përbashkët",
     roleRadiologist: "Radiolog",
-    roleDepartment: "Departamenti",
+    roleDoctor: "Mjek",
     roleOps: "Operacional",
     uploadTitle: "Analizë e Re",
     uploadSubtitle: "Ngarko një imazh mjekësor për diagnozë me ndihmën e AI",
@@ -144,6 +147,9 @@ const translations = {
     searchPlaceholderArchive: "Kërko pacient, ID, modalitet…",
     studiesArchived: "studime të arkivuara",
     online: "Online",
+    aiPowered: "Mbështetur nga AI",
+    liveActivity: "Aktivitet Live",
+    systemOnline: "Sistemi Aktiv",
   },
 };
 
