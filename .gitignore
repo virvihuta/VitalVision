@@ -6,3 +6,12 @@ data/images/
 data/processed/
 *.pt
 *.pth
+ai/data/raw/
+ai/data/images/
+ai/data/results/
+*.zip
+*.tar.gz
+*.gz
+*.png
+*.jpg
+*.jpeg
