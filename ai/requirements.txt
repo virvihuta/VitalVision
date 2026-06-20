@@ -1,0 +1,10 @@
+anthropic
+torch
+torchvision
+Pillow
+numpy
+pandas
+scikit-learn
+matplotlib
+kaggle
+python-dotenv
