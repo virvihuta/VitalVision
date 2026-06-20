@@ -1,6 +1,7 @@
 import type { DiagnosticReport, Alert } from "../types";
 
 const DEMO_REPORTS: DiagnosticReport[] = [
+  // Arben Kola — serial chest X-rays showing progression
   {
     id: "RPT-001", patientId: "PAT-1042", patientName: "Arben Kola", patientAge: 58,
     modality: "X-Ray", bodyPart: "Chest", imageDataUrl: "", riskScore: 87, riskLevel: "critical",
@@ -14,6 +15,32 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     radiologistName: "Dr. Erion Basha", department: ["Emergency", "Pulmonology"], status: "archived",
   },
   {
+    id: "RPT-001b", patientId: "PAT-1042", patientName: "Arben Kola", patientAge: 58,
+    modality: "X-Ray", bodyPart: "Chest", imageDataUrl: "", riskScore: 62, riskLevel: "high",
+    findings: [
+      { region: "Right lower lobe", description: "Persistent but reduced consolidation", severity: "moderate" },
+      { region: "Pleural space", description: "Decreased pleural effusion compared to prior", severity: "mild" },
+    ],
+    impression: "Interval improvement of right lower lobe pneumonia after 48h antibiotic therapy.",
+    recommendation: "Continue current antibiotic regimen. Repeat imaging in 5 days.",
+    archivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    radiologistName: "Dr. Erion Basha", department: ["Pulmonology"], status: "archived",
+  },
+  {
+    id: "RPT-001c", patientId: "PAT-1042", patientName: "Arben Kola", patientAge: 58,
+    modality: "X-Ray", bodyPart: "Chest", imageDataUrl: "", riskScore: 22, riskLevel: "low",
+    findings: [
+      { region: "Lung fields", description: "Near-complete resolution of prior consolidation", severity: "mild" },
+      { region: "Pleural space", description: "No residual pleural effusion", severity: "normal" },
+    ],
+    impression: "Resolved right lower lobe pneumonia. Mild residual scarring.",
+    recommendation: "Complete antibiotic course. Routine follow-up in 4 weeks.",
+    archivedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    radiologistName: "Dr. Erion Basha", department: [], status: "archived",
+  },
+
+  // Fatmira Hoxha — single study
+  {
     id: "RPT-002", patientId: "PAT-2088", patientName: "Fatmira Hoxha", patientAge: 34,
     modality: "CT", bodyPart: "Abdomen", imageDataUrl: "", riskScore: 42, riskLevel: "medium",
     findings: [
@@ -25,6 +52,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Erion Basha", department: ["Surgery", "Gastroenterology"], status: "archived",
   },
+
+  // Gëzim Shala — single critical study
   {
     id: "RPT-003", patientId: "PAT-3301", patientName: "Gëzim Shala", patientAge: 71,
     modality: "MRI", bodyPart: "Brain", imageDataUrl: "", riskScore: 91, riskLevel: "critical",
@@ -37,6 +66,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Albana Musta", department: ["Neurology", "ICU"], status: "archived",
   },
+
+  // Mirela Duka — single study
   {
     id: "RPT-004", patientId: "PAT-4455", patientName: "Mirela Duka", patientAge: 45,
     modality: "X-Ray", bodyPart: "Chest", imageDataUrl: "", riskScore: 18, riskLevel: "low",
@@ -49,6 +80,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Erion Basha", department: [], status: "archived",
   },
+
+  // Bujar Hoti — serial chest CTs showing worsening nodule
   {
     id: "RPT-005", patientId: "PAT-5102", patientName: "Bujar Hoti", patientAge: 63,
     modality: "CT", bodyPart: "Chest", imageDataUrl: "", riskScore: 67, riskLevel: "high",
@@ -62,6 +95,20 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     radiologistName: "Dr. Albana Musta", department: ["Oncology", "Pulmonology"], status: "archived",
   },
   {
+    id: "RPT-005b", patientId: "PAT-5102", patientName: "Bujar Hoti", patientAge: 63,
+    modality: "CT", bodyPart: "Chest", imageDataUrl: "", riskScore: 45, riskLevel: "medium",
+    findings: [
+      { region: "Right upper lobe", description: "Stable spiculated nodule 11mm, monitored", severity: "moderate" },
+      { region: "Mediastinum", description: "Lymph nodes unchanged", severity: "mild" },
+    ],
+    impression: "Stable right upper lobe nodule at 6-week follow-up. No significant interval change.",
+    recommendation: "Continue active surveillance. Repeat CT in 3 months.",
+    archivedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    radiologistName: "Dr. Albana Musta", department: ["Oncology"], status: "archived",
+  },
+
+  // Arta Leka — single study
+  {
     id: "RPT-006", patientId: "PAT-6230", patientName: "Arta Leka", patientAge: 29,
     modality: "Ultrasound", bodyPart: "Abdomen", imageDataUrl: "", riskScore: 24, riskLevel: "low",
     findings: [
@@ -73,6 +120,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Erion Basha", department: [], status: "archived",
   },
+
+  // Driton Berisha — single critical study
   {
     id: "RPT-007", patientId: "PAT-7891", patientName: "Driton Berisha", patientAge: 52,
     modality: "X-Ray", bodyPart: "Chest", imageDataUrl: "", riskScore: 78, riskLevel: "critical",
@@ -85,6 +134,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Albana Musta", department: ["Cardiology", "Emergency"], status: "archived",
   },
+
+  // Elona Myftari — single study
   {
     id: "RPT-008", patientId: "PAT-8004", patientName: "Elona Myftari", patientAge: 38,
     modality: "MRI", bodyPart: "Spine", imageDataUrl: "", riskScore: 35, riskLevel: "medium",
@@ -97,6 +148,8 @@ const DEMO_REPORTS: DiagnosticReport[] = [
     archivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     radiologistName: "Dr. Erion Basha", department: ["Neurosurgery"], status: "archived",
   },
+
+  // Kujtim Avdyli — single critical study
   {
     id: "RPT-009", patientId: "PAT-9123", patientName: "Kujtim Avdyli", patientAge: 77,
     modality: "CT", bodyPart: "Brain", imageDataUrl: "", riskScore: 83, riskLevel: "critical",
@@ -156,6 +209,12 @@ class PACSStore {
 
   getReportById(id: string): DiagnosticReport | undefined {
     return this.reports.find((r) => r.id === id);
+  }
+
+  getReportsByPatient(patientId: string): DiagnosticReport[] {
+    return this.reports
+      .filter((r) => r.patientId === patientId)
+      .sort((a, b) => new Date(a.archivedAt).getTime() - new Date(b.archivedAt).getTime());
   }
 
   searchReports(query: string): DiagnosticReport[] {

@@ -2,9 +2,12 @@ import React, { useState, useMemo } from "react";
 import { Search, User, FileText, Calendar } from "lucide-react";
 import type { DiagnosticReport } from "../../types";
 import { usePACS } from "../../hooks/usePACS";
+import { pacsStore } from "../../lib/pacsStore";
 import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
 import { ImageViewer3D } from "../viewer/ImageViewer3D";
+import { PatientTimeline } from "./PatientTimeline";
+import { SerialCompare } from "../viewer/SerialCompare";
 import { useLanguage } from "../../hooks/useLanguage";
 import { t } from "../../i18n";
 
@@ -14,22 +17,43 @@ export const DepartmentView: React.FC = () => {
 
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [comparing, setComparing] = useState(false);
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return reports;
+  // Group reports by patient for the search list
+  const patientGroups = useMemo(() => {
+    const map = new Map<string, DiagnosticReport[]>();
+    for (const r of reports) {
+      if (!map.has(r.patientId)) map.set(r.patientId, []);
+      map.get(r.patientId)!.push(r);
+    }
+    return Array.from(map.entries()).map(([patientId, list]) => {
+      const sorted = [...list].sort(
+        (a, b) => new Date(b.archivedAt).getTime() - new Date(a.archivedAt).getTime()
+      );
+      return { patientId, latest: sorted[0], count: sorted.length, all: sorted };
+    });
+  }, [reports]);
+
+  const filteredGroups = useMemo(() => {
+    if (!query.trim()) return patientGroups;
     const q = query.toLowerCase();
-    return reports.filter(
-      (r) =>
-        r.patientName.toLowerCase().includes(q) ||
-        r.patientId.toLowerCase().includes(q) ||
-        r.modality.toLowerCase().includes(q) ||
-        r.bodyPart.toLowerCase().includes(q)
+    return patientGroups.filter(
+      (g) =>
+        g.latest.patientName.toLowerCase().includes(q) ||
+        g.patientId.toLowerCase().includes(q) ||
+        g.latest.modality.toLowerCase().includes(q) ||
+        g.latest.bodyPart.toLowerCase().includes(q)
     );
-  }, [reports, query]);
+  }, [patientGroups, query]);
 
   const selected: DiagnosticReport | undefined = useMemo(
     () => reports.find((r) => r.id === selectedId),
     [reports, selectedId]
+  );
+
+  const patientStudies = useMemo(
+    () => (selected ? pacsStore.getReportsByPatient(selected.patientId) : []),
+    [selected]
   );
 
   const formatTime = (iso: string) => {
@@ -55,7 +79,7 @@ export const DepartmentView: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left — search + patient list */}
+        {/* Left — patient list */}
         <div className="lg:col-span-2 space-y-3">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -64,40 +88,46 @@ export const DepartmentView: React.FC = () => {
               placeholder={t("searchPlaceholder", lang)}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-navy-800 border border-navy-600 rounded-lg pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-clinical-blue"
+              className="w-full bg-navy-800 border border-navy-600 rounded-lg pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan"
             />
           </div>
 
           <div className="space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
-            {filtered.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="bg-navy-800/50 border border-navy-700 border-dashed rounded-xl p-8 text-center">
                 <p className="text-sm text-slate-500">{t("noPatients", lang)}</p>
               </div>
             ) : (
-              filtered.map((r) => (
+              filteredGroups.map((g) => (
                 <button
-                  key={r.id}
-                  onClick={() => setSelectedId(r.id)}
+                  key={g.patientId}
+                  onClick={() => setSelectedId(g.latest.id)}
                   className={`w-full text-left bg-navy-800 border rounded-xl p-3 transition-colors ${
-                    selectedId === r.id
-                      ? "border-clinical-blue"
+                    selected?.patientId === g.patientId
+                      ? "border-ai-cyan"
                       : "border-navy-600 hover:border-navy-500"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-2 min-w-0">
                       <User size={13} className="text-slate-500 flex-shrink-0" />
-                      <p className="text-sm font-medium text-slate-200 truncate">{r.patientName}</p>
+                      <p className="text-sm font-medium text-slate-200 truncate">
+                        {g.latest.patientName}
+                      </p>
                     </div>
-                    <RiskBadge level={r.riskLevel} />
+                    <RiskBadge level={g.latest.riskLevel} />
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500 font-mono">
-                    <span>{r.patientId}</span>
-                    <span>{r.modality} · {r.bodyPart}</span>
+                    <span>{g.patientId}</span>
+                    <span>
+                      {g.count > 1
+                        ? `${g.count} ${t("studies", lang)}`
+                        : `${g.latest.modality} · ${g.latest.bodyPart}`}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1.5">
                     <Calendar size={11} />
-                    {formatTime(r.archivedAt)}
+                    {formatTime(g.latest.archivedAt)}
                   </div>
                 </button>
               ))
@@ -105,15 +135,24 @@ export const DepartmentView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right — selected report */}
-        <div className="lg:col-span-3">
+        {/* Right — timeline + selected report */}
+        <div className="lg:col-span-3 space-y-4">
           {!selected ? (
             <div className="h-full min-h-96 bg-navy-800/50 border border-navy-700 border-dashed rounded-xl flex flex-col items-center justify-center gap-3">
               <FileText size={32} className="text-slate-600" />
               <p className="text-sm text-slate-500">{t("selectPatient", lang)}</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <>
+              {patientStudies.length > 1 && (
+                <PatientTimeline
+                  studies={patientStudies}
+                  selectedId={selected.id}
+                  onSelect={setSelectedId}
+                  onCompare={() => setComparing(true)}
+                />
+              )}
+
               {selected.imageDataUrl && (
                 <ImageViewer3D imageDataUrl={selected.imageDataUrl} height={300} />
               )}
@@ -201,10 +240,18 @@ export const DepartmentView: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
+
+      {comparing && patientStudies.length >= 2 && (
+        <SerialCompare
+          before={patientStudies[0]}
+          after={patientStudies[patientStudies.length - 1]}
+          onClose={() => setComparing(false)}
+        />
+      )}
     </div>
   );
 };
