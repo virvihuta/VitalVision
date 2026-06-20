@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "./components/layout/Sidebar";
 import { RadiologistView } from "./components/views/RadiologistView";
 import { DepartmentView } from "./components/views/DepartmentView";
+import { AlertsView } from "./components/views/AlertsView";
 import { ToastProvider } from "./components/ui/Toast";
 import { LanguageContext, useLanguageState } from "./hooks/useLanguage";
 import { usePACS } from "./hooks/usePACS";
@@ -36,7 +37,7 @@ function AppContent() {
     if (activeView === "analyze") return <RadiologistView />;
     if (activeView === "search") return <DepartmentView />;
     if (activeView === "archive") return <DepartmentView />;
-    if (activeView === "alerts") return <Placeholder name={t("alerts", lang)} />;
+    if (activeView === "alerts") return <AlertsView />;
     if (activeView === "dashboard") return <Placeholder name={t("dashboard", lang)} />;
     return <RadiologistView />;
   };
