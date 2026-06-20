@@ -1,17 +1,20 @@
+from pathlib import Path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision import datasets, transforms
 from model import build_model, get_device
 
-TRAIN_DIR = 'data/pneumonia/chest_xray/chest_xray/train'
-VAL_DIR = 'data/pneumonia/chest_xray/chest_xray/val'
-TEST_DIR = 'data/pneumonia/chest_xray/chest_xray/test'
+DATA_DIR = Path(__file__).resolve().parent / 'data'
+PNEUMONIA_DIR = DATA_DIR / 'pneumonia' / 'chest_xray' / 'chest_xray'
+TRAIN_DIR = PNEUMONIA_DIR / 'train'
+VAL_DIR = PNEUMONIA_DIR / 'val'
+TEST_DIR = PNEUMONIA_DIR / 'test'
 BATCH_SIZE = 32
 EPOCHS = 20
 LR = 3e-4
 WEIGHT_DECAY = 1e-4
-SAVE_PATH = 'data/model.pt'
+SAVE_PATH = DATA_DIR / 'model.pt'
 
 
 def get_transforms():
@@ -151,7 +154,7 @@ def train():
 
     print(f"\nTraining complete. Best val accuracy: {best_val_acc:.4f}")
     print("\nLoading best model for test evaluation...")
-    model.load_state_dict(torch.load(SAVE_PATH, map_location=device))
+    model.load_state_dict(torch.load(SAVE_PATH, map_location=device, weights_only=True))
     evaluate(model, test_loader, criterion, device, "Test")
 
 

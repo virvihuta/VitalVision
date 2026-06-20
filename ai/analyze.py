@@ -1,18 +1,18 @@
 import torch
-import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
 import io
 import base64
+from pathlib import Path
 from model import build_model, get_device
 
-SAVE_PATH = 'data/model.pt'
+SAVE_PATH = Path(__file__).resolve().parent / 'data' / 'model.pt'
 CLASSES = ['NORMAL', 'PNEUMONIA']
 
 def load_model():
     device = get_device()
     model = build_model(pretrained=False, freeze_backbone=False)
-    model.load_state_dict(torch.load(SAVE_PATH, map_location=device))
+    model.load_state_dict(torch.load(SAVE_PATH, map_location=device, weights_only=True))
     model.to(device)
     model.eval()
     return model, device

@@ -1,16 +1,19 @@
 .env
 venv/
+.venv/
+env/
 __pycache__/
 *.pyc
 ai/data/
 *.pt
 *.pth
-ai/data/raw/
-ai/data/images/
-ai/data/results/
 *.zip
 *.tar.gz
 *.gz
 *.png
 *.jpg
 *.jpeg
+
+# macOS
+.DS_Store
+__MACOSX/
