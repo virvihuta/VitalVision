@@ -10,6 +10,7 @@ import type { UserRole } from "../../types";
 import { useLanguage } from "../../hooks/useLanguage";
 import { t } from "../../i18n";
 import { LanguageToggle } from "../ui/LanguageToggle";
+import { SoundToggle } from "../ui/SoundToggle";
 
 interface SidebarProps {
   role: UserRole;
@@ -139,8 +140,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </nav>
 
-      <div className="p-3 border-t border-navy-600">
+      <div className="p-3 border-t border-navy-600 space-y-2">
         <LanguageToggle />
+        <SoundToggle />
       </div>
 
       <div className="p-4 border-t border-navy-600">

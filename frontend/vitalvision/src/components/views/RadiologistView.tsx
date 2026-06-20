@@ -12,6 +12,7 @@ import { HeatmapOverlay } from "../viewer/HeatmapOverlay";
 import { useToast } from "../ui/Toast";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { playSuccess, playCritical } from "../../lib/sound";
 import { t } from "../../i18n";
 
 const MODALITIES: Modality[] = ["X-Ray", "CT", "MRI", "Ultrasound"];
@@ -83,6 +84,7 @@ export const RadiologistView: React.FC = () => {
       };
       setReport(newReport);
       setStatus("done");
+      playSuccess();
       showToast(lang === "sq" ? "Analiza përfundoi" : "Analysis complete", "success");
     } catch (err) {
       setStatus("error");
@@ -98,6 +100,9 @@ export const RadiologistView: React.FC = () => {
     showToast(t("studyArchived", lang), "success");
     if (report.riskScore >= 75) {
       setAlertReport(report);
+      playCritical();
+    } else {
+      playSuccess();
     }
   };
 
@@ -126,7 +131,6 @@ export const RadiologistView: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left — form + upload */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-navy-800 border border-navy-600 rounded-xl p-4 space-y-3">
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -262,15 +266,22 @@ export const RadiologistView: React.FC = () => {
           )}
         </div>
 
-        {/* Right — report + viewer */}
         <div className="lg:col-span-3 space-y-4">
           {!report ? (
-            <div className="h-full min-h-96 bg-navy-800/50 border border-navy-700 border-dashed rounded-xl flex items-center justify-center">
-              <p className="text-sm text-slate-500">
-                {lang === "sq"
-                  ? "Raporti do të shfaqet këtu pas analizës"
-                  : "Report will appear here after analysis"}
-              </p>
+            <div className="h-full min-h-96 bg-navy-800/50 border border-navy-700 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 p-8 text-center">
+              <div className="w-14 h-14 rounded-full bg-ai-gradient-soft flex items-center justify-center">
+                <Sparkles size={20} className="text-ai-cyan" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-300 font-medium">
+                  {lang === "sq" ? "Gati për analizë" : "Ready for analysis"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                  {lang === "sq"
+                    ? "Plotëso të dhënat e pacientit dhe ngarko një imazh për të nisur."
+                    : "Fill in the patient info and upload an image to begin."}
+                </p>
+              </div>
             </div>
           ) : (
             <>
