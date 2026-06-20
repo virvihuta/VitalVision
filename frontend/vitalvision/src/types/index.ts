@@ -3,10 +3,18 @@ export type Modality = "X-Ray" | "CT" | "MRI" | "Ultrasound";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type Language = "sq" | "en";
 
+export interface BoundingBox {
+  x: number; // 0–1 normalized
+  y: number; // 0–1 normalized
+  w: number; // 0–1 normalized
+  h: number; // 0–1 normalized
+}
+
 export interface Finding {
   region: string;
   description: string;
   severity: "normal" | "mild" | "moderate" | "severe";
+  bbox?: BoundingBox;
 }
 
 export interface DiagnosticReport {

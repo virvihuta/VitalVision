@@ -7,6 +7,7 @@ import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
 import { CriticalAlertModal } from "../ui/CriticalAlertModal";
 import { ImageViewer3D } from "../viewer/ImageViewer3D";
+import { HeatmapOverlay } from "../viewer/HeatmapOverlay";
 import { useToast } from "../ui/Toast";
 import { useLanguage } from "../../hooks/useLanguage";
 import { t } from "../../i18n";
@@ -30,6 +31,7 @@ export const RadiologistView: React.FC = () => {
   const [report, setReport] = useState<DiagnosticReport | null>(null);
   const [archived, setArchived] = useState(false);
   const [alertReport, setAlertReport] = useState<DiagnosticReport | null>(null);
+  const [activeFinding, setActiveFinding] = useState<number | null>(null);
 
   const canAnalyze = patientName.trim() && patientAge.trim() && bodyPart.trim() && imageDataUrl;
 
@@ -105,7 +107,12 @@ export const RadiologistView: React.FC = () => {
     setReport(null);
     setArchived(false);
     setErrorMsg("");
+    setActiveFinding(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const toggleFinding = (i: number) => {
+    setActiveFinding((prev) => (prev === i ? null : i));
   };
 
   return (
@@ -264,7 +271,17 @@ export const RadiologistView: React.FC = () => {
             </div>
           ) : (
             <>
-              {imageDataUrl && <ImageViewer3D imageDataUrl={imageDataUrl} height={320} />}
+              {imageDataUrl && (
+                <HeatmapOverlay
+                  imageDataUrl={imageDataUrl}
+                  findings={report.findings}
+                  activeFindingIndex={activeFinding}
+                  onZoneClick={toggleFinding}
+                  height={340}
+                />
+              )}
+
+              {imageDataUrl && <ImageViewer3D imageDataUrl={imageDataUrl} height={280} />}
 
               <div className="bg-navy-800 border border-navy-600 rounded-xl p-5">
                 <div className="flex items-start justify-between mb-5">
@@ -303,28 +320,41 @@ export const RadiologistView: React.FC = () => {
                     {t("findings", lang)}
                   </p>
                   <div className="space-y-2">
-                    {report.findings.map((f, i) => (
-                      <div
-                        key={i}
-                        className="flex items-start gap-3 bg-navy-700 border border-navy-500 rounded-lg px-3 py-2.5"
-                      >
-                        <span
-                          className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            f.severity === "severe"
-                              ? "bg-red-400"
-                              : f.severity === "moderate"
-                              ? "bg-amber-400"
-                              : f.severity === "mild"
-                              ? "bg-orange-300"
-                              : "bg-emerald-400"
+                    {report.findings.map((f, i) => {
+                      const active = activeFinding === i;
+                      const isAbnormal = f.severity !== "normal";
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => toggleFinding(i)}
+                          className={`w-full text-left flex items-start gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                            active
+                              ? "bg-navy-600 border border-ai-cyan/60"
+                              : "bg-navy-700 border border-navy-500 hover:border-navy-400"
                           }`}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm text-slate-200 font-medium">{f.region}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{f.description}</p>
-                        </div>
-                      </div>
-                    ))}
+                        >
+                          {isAbnormal ? (
+                            <span
+                              className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-semibold flex-shrink-0 ${
+                                f.severity === "severe"
+                                  ? "bg-red-500/20 text-red-400 border border-red-500/40"
+                                  : f.severity === "moderate"
+                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                  : "bg-orange-400/20 text-orange-300 border border-orange-400/40"
+                              }`}
+                            >
+                              {i + 1}
+                            </span>
+                          ) : (
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-slate-200 font-medium">{f.region}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{f.description}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
