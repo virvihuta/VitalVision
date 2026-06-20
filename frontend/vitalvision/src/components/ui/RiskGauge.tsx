@@ -11,17 +11,17 @@ interface RiskGaugeProps {
 }
 
 const RISK_COLORS: Record<RiskLevel, string> = {
-  low: "#22D3EE",
-  medium: "#A855F7",
-  high: "#F97316",
-  critical: "#EF4444",
+  LOW: "#22D3EE",
+  MODERATE: "#A855F7",
+  HIGH: "#F97316",
+  CRITICAL: "#EF4444",
 };
 
 function getRiskLevel(score: number): RiskLevel {
-  if (score >= 80) return "critical";
-  if (score >= 60) return "high";
-  if (score >= 35) return "medium";
-  return "low";
+  if (score >= 75) return "CRITICAL";
+  if (score >= 60) return "HIGH";
+  if (score >= 30) return "MODERATE";
+  return "LOW";
 }
 
 export const RiskGauge: React.FC<RiskGaugeProps> = ({
@@ -34,7 +34,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
   const level = getRiskLevel(score);
   const color = RISK_COLORS[level];
   const label = t(level, lang);
-  const useAiGradient = level === "low" || level === "medium";
+  const useAiGradient = level === "LOW" || level === "MODERATE";
 
   const [displayScore, setDisplayScore] = useState(animate ? 0 : score);
   const rafRef = useRef<number | null>(null);
@@ -66,7 +66,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({
   const offset = circumference - (displayScore / 100) * circumference;
   const cx = size / 2;
   const cy = size / 2;
-  const isCritical = level === "critical";
+  const isCritical = level === "CRITICAL";
   const gradId = `gauge-grad-${Math.round(score * 1000)}`;
 
   return (

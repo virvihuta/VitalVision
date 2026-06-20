@@ -26,7 +26,7 @@ export const CriticalAlertModal: React.FC<CriticalAlertModalProps> = ({ report, 
     return () => window.removeEventListener("keydown", handler);
   }, [onDismiss]);
 
-  const isCritical = report.riskLevel === "critical";
+  const isCritical = report.riskLevel === "CRITICAL";
   const accentColor = isCritical ? "#EF4444" : "#F97316";
   const bgPulse = isCritical ? "rgba(239,68,68,0.06)" : "rgba(249,115,22,0.06)";
 

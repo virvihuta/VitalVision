@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import { Search, User, FileText, Calendar } from "lucide-react";
 import type { DiagnosticReport } from "../../types";
 import { usePACS } from "../../hooks/usePACS";
-import { pacsStore } from "../../lib/pacsStore";
 import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
 import { ExportPdfButton } from "../ui/ExportPdfButton";
@@ -53,10 +52,14 @@ export const DepartmentView: React.FC = () => {
     [reports, selectedId]
   );
 
-  const patientStudies = useMemo(
-    () => (selected ? pacsStore.getReportsByPatient(selected.patientId) : []),
-    [selected]
-  );
+  const patientStudies = useMemo(() => {
+    if (!selected) return [];
+    return reports
+      .filter((r) => r.patientId === selected.patientId)
+      .sort(
+        (a, b) => new Date(a.archivedAt).getTime() - new Date(b.archivedAt).getTime()
+      );
+  }, [reports, selected]);
 
   const formatTime = (iso: string) => {
     const d = new Date(iso);

@@ -1,6 +1,6 @@
 export type UserRole = "radiologist" | "doctor" | "ops";
 export type Modality = "X-Ray" | "CT" | "MRI" | "Ultrasound";
-export type RiskLevel = "low" | "medium" | "high" | "critical";
+export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
 export type Language = "sq" | "en";
 
 export interface BoundingBox {
@@ -21,6 +21,7 @@ export interface DiagnosticReport {
   id: string;
   patientId: string;
   patientName: string;
+  personalNumber: string;
   patientAge: number;
   modality: Modality;
   bodyPart: string;

@@ -46,7 +46,7 @@ export const AlertsView: React.FC = () => {
   };
 
   const markAllRead = () => {
-    pacsStore.markAllAlertsRead();
+    pacsStore.markAllAlertsRead(alerts.map((a) => a.id));
     showToast(
       lang === "sq" ? "Të gjitha u shënuan si të lexuara" : "All marked as read",
       "success"
@@ -95,7 +95,7 @@ export const AlertsView: React.FC = () => {
       ) : (
         <div className="space-y-2.5">
           {sorted.map((a) => {
-            const isCritical = a.riskLevel === "critical";
+            const isCritical = a.riskLevel === "CRITICAL";
             const accent = isCritical ? "#EF4444" : "#F97316";
             return (
               <button

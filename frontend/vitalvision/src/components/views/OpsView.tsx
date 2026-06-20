@@ -14,10 +14,10 @@ const MODALITY_COLORS: Record<Modality, string> = {
 };
 
 const RISK_COLORS: Record<RiskLevel, string> = {
-  low: "#10B981",
-  medium: "#F59E0B",
-  high: "#F97316",
-  critical: "#EF4444",
+  LOW: "#10B981",
+  MODERATE: "#F59E0B",
+  HIGH: "#F97316",
+  CRITICAL: "#EF4444",
 };
 
 interface SparklineProps {
@@ -138,7 +138,7 @@ export const OpsView: React.FC = () => {
   }, [last7Days, reports]);
 
   const riskDistribution = useMemo(() => {
-    const counts: Record<RiskLevel, number> = { low: 0, medium: 0, high: 0, critical: 0 };
+    const counts: Record<RiskLevel, number> = { LOW: 0, MODERATE: 0, HIGH: 0, CRITICAL: 0 };
     reports.forEach((r) => counts[r.riskLevel]++);
     return counts;
   }, [reports]);

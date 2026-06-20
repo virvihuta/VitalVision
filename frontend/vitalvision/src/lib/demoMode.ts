@@ -5,12 +5,13 @@ export const DEMO_REPORT: DiagnosticReport = {
   id: `RPT-DEMO-${Date.now()}`,
   patientId: "PAT-DEMO-7777",
   patientName: "Endrit Marku",
+  personalNumber: "M19850712A",
   patientAge: 64,
   modality: "X-Ray",
   bodyPart: "Chest",
   imageDataUrl: "",
   riskScore: 89,
-  riskLevel: "critical",
+  riskLevel: "CRITICAL",
   findings: [
     {
       region: "Right lower lobe",

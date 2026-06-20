@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Upload, Sparkles, Loader2, ShieldCheck, X, FileImage } from "lucide-react";
 import type { DiagnosticReport, Modality } from "../../types";
-import { analyzeImage } from "../../api/anthropicApi";
-import { pacsStore } from "../../lib/pacsStore";
+import { analyzeImage, archiveStudy } from "../../api/backendApi";
+import { usePACS } from "../../hooks/usePACS";
 import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
 import { CriticalAlertModal } from "../ui/CriticalAlertModal";
@@ -17,18 +17,33 @@ import { t } from "../../i18n";
 
 const MODALITIES: Modality[] = ["X-Ray", "CT", "MRI", "Ultrasound"];
 
+const BODY_PARTS: { value: string; labelKey: import("../../i18n").TranslationKey }[] = [
+  { value: "Chest", labelKey: "bpChest" },
+  { value: "Abdomen", labelKey: "bpAbdomen" },
+  { value: "Head / Brain", labelKey: "bpHeadBrain" },
+  { value: "Spine", labelKey: "bpSpine" },
+  { value: "Pelvis", labelKey: "bpPelvis" },
+  { value: "Extremities (Upper)", labelKey: "bpUpperExtremities" },
+  { value: "Extremities (Lower)", labelKey: "bpLowerExtremities" },
+  { value: "Neck", labelKey: "bpNeck" },
+  { value: "Cardiac", labelKey: "bpCardiac" },
+  { value: "Full Body", labelKey: "bpFullBody" },
+];
+
 type Status = "idle" | "analyzing" | "done" | "error";
 
 export const RadiologistView: React.FC = () => {
   const { lang } = useLanguage();
   const { showToast } = useToast();
+  const { refetch } = usePACS();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = useCurrentUser("radiologist");
 
   const [patientName, setPatientName] = useState("");
+  const [personalNumber, setPersonalNumber] = useState("");
   const [patientAge, setPatientAge] = useState("");
   const [modality, setModality] = useState<Modality>("X-Ray");
-  const [bodyPart, setBodyPart] = useState("");
+  const [bodyPart, setBodyPart] = useState("Chest");
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -37,7 +52,15 @@ export const RadiologistView: React.FC = () => {
   const [alertReport, setAlertReport] = useState<DiagnosticReport | null>(null);
   const [activeFinding, setActiveFinding] = useState<number | null>(null);
 
-  const canAnalyze = patientName.trim() && patientAge.trim() && bodyPart.trim() && imageDataUrl;
+  const PERSONAL_NUMBER_RE = /^[A-Z]\d{8}[A-Z]$/;
+  const personalNumberValid = PERSONAL_NUMBER_RE.test(personalNumber);
+  const personalNumberError = personalNumber.length > 0 && !personalNumberValid;
+  const canAnalyze =
+    patientName.trim() &&
+    patientAge.trim() &&
+    bodyPart.trim() &&
+    personalNumberValid &&
+    imageDataUrl;
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -62,18 +85,21 @@ export const RadiologistView: React.FC = () => {
         patientName,
         parseInt(patientAge, 10),
         modality,
-        bodyPart
+        bodyPart,
+        lang,
+        personalNumber
       );
       const newReport: DiagnosticReport = {
         id: `RPT-${Date.now()}`,
         patientId: `PAT-${Math.floor(1000 + Math.random() * 9000)}`,
         patientName,
+        personalNumber,
         patientAge: parseInt(patientAge, 10),
         modality,
         bodyPart,
         imageDataUrl,
         riskScore: result.riskScore ?? 0,
-        riskLevel: result.riskLevel ?? "low",
+        riskLevel: result.riskLevel ?? "LOW",
         findings: result.findings ?? [],
         impression: result.impression ?? "",
         recommendation: result.recommendation ?? "",
@@ -93,23 +119,50 @@ export const RadiologistView: React.FC = () => {
     }
   };
 
-  const archiveReport = () => {
+  const archiveReport = async () => {
     if (!report) return;
-    pacsStore.archiveReport(report);
-    setArchived(true);
-    showToast(t("studyArchived", lang), "success");
-    if (report.riskScore >= 75) {
-      setAlertReport(report);
-      playCritical();
-    } else {
-      playSuccess();
+    try {
+      await archiveStudy(
+        {
+          patientName: report.patientName,
+          patientId: report.patientId,
+          personalNumber: report.personalNumber,
+          patientAge: report.patientAge,
+          sex: "",
+          modality: report.modality,
+          bodyPart: report.bodyPart,
+          clinicalNotes: "",
+          radiologistName: report.radiologistName,
+          imageDataUrl: report.imageDataUrl,
+        },
+        {
+          riskScore: report.riskScore,
+          riskLevel: report.riskLevel,
+          findings: report.findings,
+          impression: report.impression,
+          recommendation: report.recommendation,
+          department: report.department,
+        }
+      );
+      setArchived(true);
+      await refetch();
+      showToast(t("studyArchived", lang), "success");
+      if (report.riskScore >= 75) {
+        setAlertReport(report);
+        playCritical();
+      } else {
+        playSuccess();
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Archive failed", "error");
     }
   };
 
   const reset = () => {
     setPatientName("");
+    setPersonalNumber("");
     setPatientAge("");
-    setBodyPart("");
+    setBodyPart("Chest");
     setImageDataUrl(null);
     setStatus("idle");
     setReport(null);
@@ -144,6 +197,31 @@ export const RadiologistView: React.FC = () => {
               disabled={status === "analyzing" || status === "done"}
               className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
             />
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                {t("personalNumber", lang)}
+              </label>
+              <input
+                type="text"
+                placeholder={t("personalNumberPlaceholder", lang)}
+                value={personalNumber}
+                onChange={(e) => setPersonalNumber(e.target.value.toUpperCase())}
+                disabled={status === "analyzing" || status === "done"}
+                aria-label={t("personalNumber", lang)}
+                aria-invalid={personalNumberError}
+                maxLength={10}
+                className={`w-full bg-navy-700 border rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none disabled:opacity-60 font-mono tracking-wide ${
+                  personalNumberError
+                    ? "border-red-500 focus:border-red-400"
+                    : "border-navy-500 focus:border-ai-cyan"
+                }`}
+              />
+              {personalNumberError && (
+                <p className="text-xs text-red-400 mt-1">
+                  {t("personalNumberInvalid", lang)}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <input
                 type="number"
@@ -164,14 +242,18 @@ export const RadiologistView: React.FC = () => {
                 ))}
               </select>
             </div>
-            <input
-              type="text"
-              placeholder={lang === "sq" ? "Pjesa e trupit (p.sh. kraharori)" : "Body part (e.g. chest)"}
+            <select
               value={bodyPart}
               onChange={(e) => setBodyPart(e.target.value)}
               disabled={status === "analyzing" || status === "done"}
-              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
-            />
+              aria-label={t("bodyPart", lang)}
+              title={t("bodyPart", lang)}
+              className="w-full bg-navy-700 border border-navy-500 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-ai-cyan disabled:opacity-60"
+            >
+              {BODY_PARTS.map((bp) => (
+                <option key={bp.value} value={bp.value}>{t(bp.labelKey, lang)}</option>
+              ))}
+            </select>
           </div>
 
           {!imageDataUrl ? (

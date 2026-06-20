@@ -23,10 +23,10 @@ const SEVERITY_COLOR = {
 };
 
 const RISK_COLOR = {
-  low: "#10B981",
-  medium: "#F59E0B",
-  high: "#F97316",
-  critical: "#EF4444",
+  LOW: "#10B981",
+  MODERATE: "#F59E0B",
+  HIGH: "#F97316",
+  CRITICAL: "#EF4444",
 };
 
 export function exportReportAsPdf(report: DiagnosticReport, hospital: string, lang: Language) {

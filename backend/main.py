@@ -1,15 +1,19 @@
+import os
+import sys
+import uuid
+from datetime import datetime
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import Optional
-import uuid
-from datetime import datetime
-import anthropic
-import os
 from dotenv import load_dotenv
 import jwt
 import bcrypt
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from ai.analyze import analyze as pytorch_analyze
 
 load_dotenv()
 
@@ -18,7 +22,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -38,11 +42,13 @@ class PatientMetadata(BaseModel):
     age: int
     sex: str
     modality: str
+    bodyPart: Optional[str] = ""
     clinicalNotes: Optional[str] = ""
 
 class AnalyzeRequest(BaseModel):
     image: str
     metadata: PatientMetadata
+    lang: Optional[str] = "en"
 
 class ArchiveRequest(BaseModel):
     metadata: dict
@@ -90,36 +96,6 @@ MOCK_REPORT = {
     "tags": ["pneumonia", "consolidation", "follow-up required"],
     "studyQuality": "good"
 }
-
-SYSTEM_PROMPT = """You are an expert radiologist AI assistant. Analyze the provided medical image and return a structured JSON report.
-
-You must return ONLY valid JSON, no other text, in exactly this format:
-{
-  "riskScore": <integer 0-100>,
-  "riskLevel": <"LOW" if score<30, "MODERATE" if 30-74, "HIGH" if >=75>,
-  "findings": [
-    {
-      "region": "<anatomical region>",
-      "severity": "<mild|moderate|severe>",
-      "description": "<specific clinical description>"
-    }
-  ],
-  "impression": "<2-3 sentence overall clinical picture>",
-  "recommendation": "<specific next step>",
-  "tags": ["<tag1>", "<tag2>"],
-  "studyQuality": "<good|fair|poor>"
-}
-
-If the image is blurry, wrongly oriented, or not a medical image, return:
-{
-  "riskScore": 0,
-  "riskLevel": "LOW",
-  "findings": [{"region": "N/A", "severity": "N/A", "description": "image quality insufficient for reliable analysis"}],
-  "impression": "The submitted image could not be analyzed reliably due to quality issues.",
-  "recommendation": "Please resubmit a higher quality image.",
-  "tags": ["image-quality-issue"],
-  "studyQuality": "poor"
-}"""
 
 # --- Auth Endpoints ---
 
@@ -184,41 +160,9 @@ async def me(current_user: dict = Depends(get_current_user)):
 
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-
-    if not api_key or api_key == "paste_your_key_here":
-        return MOCK_REPORT
-
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/jpeg",
-                                "data": request.image,
-                            },
-                        },
-                        {
-                            "type": "text",
-                            "text": f"Analyze this medical image. Patient info: {request.metadata.age} year old {request.metadata.sex}, modality: {request.metadata.modality}. Clinical notes: {request.metadata.clinicalNotes}"
-                        }
-                    ],
-                }
-            ],
-        )
-        import json
-        report = json.loads(message.content[0].text)
-        return report
-    except Exception as e:
+        return pytorch_analyze(image_base64=request.image, lang=request.lang or "en")
+    except Exception:
         return MOCK_REPORT
 
 @app.post("/archive")
@@ -241,7 +185,7 @@ async def get_study(study_id: str):
     for study in studies:
         if study["id"] == study_id:
             return study
-    return {"error": "Study not found"}
+    raise HTTPException(status_code=404, detail="Study not found")
 
 @app.get("/alerts")
 async def get_alerts():

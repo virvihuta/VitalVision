@@ -11,7 +11,7 @@ import { DemoModeController } from "./components/ui/DemoModeController";
 import { LanguageContext, useLanguageState, useLanguage } from "./hooks/useLanguage";
 import { usePACS } from "./hooks/usePACS";
 import { useCurrentUser } from "./hooks/useCurrentUser";
-import { pacsStore } from "./lib/pacsStore";
+import { archiveStudy } from "./api/backendApi";
 import { DEMO_REPORT } from "./lib/demoMode";
 import { t } from "./i18n";
 import type { UserRole, DiagnosticReport } from "./types";
@@ -21,7 +21,7 @@ function AppContent() {
   const { showToast } = useToast();
   const [role, setRole] = useState<UserRole>("radiologist");
   const [activeView, setActiveView] = useState<string>("analyze");
-  const { unreadCount } = usePACS();
+  const { unreadCount, refetch } = usePACS();
   const currentUser = useCurrentUser(role);
 
   const [demoRunning, setDemoRunning] = useState(false);
@@ -42,7 +42,28 @@ function AppContent() {
           break;
         case "fireAlert": {
           const demo = { ...DEMO_REPORT, id: `RPT-DEMO-${Date.now()}`, archivedAt: new Date().toISOString() };
-          pacsStore.archiveReport(demo);
+          archiveStudy(
+            {
+              patientName: demo.patientName,
+              patientId: demo.patientId,
+              personalNumber: demo.personalNumber,
+              patientAge: demo.patientAge,
+              sex: "",
+              modality: demo.modality,
+              bodyPart: demo.bodyPart,
+              clinicalNotes: "",
+              radiologistName: demo.radiologistName,
+              imageDataUrl: demo.imageDataUrl,
+            },
+            {
+              riskScore: demo.riskScore,
+              riskLevel: demo.riskLevel,
+              findings: demo.findings,
+              impression: demo.impression,
+              recommendation: demo.recommendation,
+              department: demo.department,
+            }
+          ).then(() => refetch()).catch(() => {});
           setDemoAlertReport(demo);
           break;
         }
@@ -57,7 +78,7 @@ function AppContent() {
           break;
       }
     },
-    []
+    [refetch]
   );
 
   const handleDemoComplete = useCallback(() => {

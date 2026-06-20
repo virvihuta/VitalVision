@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { RotateCcw, Box } from "lucide-react";
+import { RotateCcw, Box, Maximize2, Minimize2 } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import { t } from "../../i18n";
 
@@ -11,6 +11,7 @@ interface ImageViewer3DProps {
 
 export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, height = 400 }) => {
   const { lang } = useLanguage();
+  const containerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -21,6 +22,7 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
   const [brightness, setBrightness] = useState(1.0);
   const [contrast, setContrast] = useState(1.2);
   const [is3D, setIs3D] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // rotation state
   const rotation = useRef({ x: 0, y: 0 });
@@ -32,17 +34,18 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
 
     const mount = mountRef.current;
     const width = mount.clientWidth;
+    const initialHeight = mount.clientHeight || height;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#070D1A");
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, width / initialHeight, 0.1, 1000);
     camera.position.z = 3;
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
+    renderer.setSize(width, initialHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -129,14 +132,17 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
     window.addEventListener("pointerup", onUp);
     renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
-    const onResize = () => {
+    const resize = () => {
       if (!mountRef.current) return;
       const w = mountRef.current.clientWidth;
-      camera.aspect = w / height;
+      const h = mountRef.current.clientHeight || height;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, height);
+      renderer.setSize(w, h);
     };
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", resize);
+    const ro = new ResizeObserver(resize);
+    ro.observe(mount);
 
     return () => {
       cancelAnimationFrame(frame);
@@ -144,11 +150,29 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       renderer.domElement.removeEventListener("wheel", onWheel);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resize);
+      ro.disconnect();
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
   }, [imageDataUrl, height]);
+
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current.requestFullscreen().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (materialRef.current) {
@@ -166,7 +190,12 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
   };
 
   return (
-    <div className="bg-navy-800 border border-navy-600 rounded-xl overflow-hidden">
+    <div
+      ref={containerRef}
+      className={`bg-navy-800 border border-navy-600 overflow-hidden ${
+        isFullscreen ? "w-screen h-screen flex flex-col rounded-none" : "rounded-xl"
+      }`}
+    >
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-navy-700">
         <div className="flex items-center gap-2">
           <Box size={14} className="text-clinical-blue" />
@@ -188,10 +217,24 @@ export const ImageViewer3D: React.FC<ImageViewer3DProps> = ({ imageDataUrl, heig
           >
             <RotateCcw size={13} />
           </button>
+          <button
+            onClick={toggleFullscreen}
+            className="text-slate-500 hover:text-slate-300 transition-colors"
+            title={isFullscreen ? t("exitFullscreen", lang) : t("fullscreen", lang)}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
         </div>
       </div>
 
-      <div ref={mountRef} style={{ height, cursor: is3D ? "grab" : "default" }} />
+      <div
+        ref={mountRef}
+        className={isFullscreen ? "flex-1" : ""}
+        style={{
+          height: isFullscreen ? undefined : height,
+          cursor: is3D ? "grab" : "default",
+        }}
+      />
 
       <div className="px-4 py-3 border-t border-navy-700 grid grid-cols-2 gap-4">
         <div>
