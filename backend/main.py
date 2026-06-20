@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
 import uuid
@@ -7,6 +8,8 @@ from datetime import datetime
 import anthropic
 import os
 from dotenv import load_dotenv
+import jwt
+import bcrypt
 
 load_dotenv()
 
@@ -20,8 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+SECRET_KEY = "vitalvision-secret-key-2024"
+
 # In-memory storage
 studies = []
+users = []
+
+security = HTTPBearer()
 
 # --- Models ---
 class PatientMetadata(BaseModel):
@@ -40,7 +48,33 @@ class ArchiveRequest(BaseModel):
     metadata: dict
     report: dict
 
-# --- Mock report (used when no API key is available) ---
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str
+    hospital: Optional[str] = "General Hospital"
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+# --- Auth helpers ---
+def create_token(user_id: str) -> str:
+    return jwt.encode({"user_id": user_id}, SECRET_KEY, algorithm="HS256")
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")
+        for user in users:
+            if user["id"] == user_id:
+                return user
+        raise HTTPException(status_code=401, detail="User not found")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# --- Mock report ---
 MOCK_REPORT = {
     "riskScore": 78,
     "riskLevel": "HIGH",
@@ -87,7 +121,66 @@ If the image is blurry, wrongly oriented, or not a medical image, return:
   "studyQuality": "poor"
 }"""
 
-# --- Endpoints ---
+# --- Auth Endpoints ---
+
+@app.post("/register")
+async def register(request: RegisterRequest):
+    for user in users:
+        if user["email"] == request.email:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed = bcrypt.hashpw(request.password.encode(), bcrypt.gensalt()).decode()
+    user = {
+        "id": str(uuid.uuid4()),
+        "name": request.name,
+        "email": request.email,
+        "password": hashed,
+        "role": request.role,
+        "hospital": request.hospital
+    }
+    users.append(user)
+    token = create_token(user["id"])
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "role": user["role"],
+            "hospital": user["hospital"]
+        }
+    }
+
+@app.post("/login")
+async def login(request: LoginRequest):
+    for user in users:
+        if user["email"] == request.email:
+            if bcrypt.checkpw(request.password.encode(), user["password"].encode()):
+                token = create_token(user["id"])
+                return {
+                    "token": token,
+                    "user": {
+                        "id": user["id"],
+                        "name": user["name"],
+                        "role": user["role"],
+                        "hospital": user["hospital"]
+                    }
+                }
+    raise HTTPException(status_code=401, detail="Invalid email or password")
+
+@app.post("/logout")
+async def logout(current_user: dict = Depends(get_current_user)):
+    return {"success": True, "message": "Logged out successfully"}
+
+@app.get("/me")
+async def me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user["id"],
+        "name": current_user["name"],
+        "role": current_user["role"],
+        "hospital": current_user["hospital"]
+    }
+
+# --- Main Endpoints ---
 
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
