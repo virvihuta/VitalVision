@@ -5,21 +5,23 @@ import { usePACS } from "../../hooks/usePACS";
 import { pacsStore } from "../../lib/pacsStore";
 import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
+import { ExportPdfButton } from "../ui/ExportPdfButton";
 import { ImageViewer3D } from "../viewer/ImageViewer3D";
 import { PatientTimeline } from "./PatientTimeline";
 import { SerialCompare } from "../viewer/SerialCompare";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { t } from "../../i18n";
 
 export const DepartmentView: React.FC = () => {
   const { lang } = useLanguage();
   const { reports } = usePACS();
+  const currentUser = useCurrentUser("doctor");
 
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
 
-  // Group reports by patient for the search list
   const patientGroups = useMemo(() => {
     const map = new Map<string, DiagnosticReport[]>();
     for (const r of reports) {
@@ -158,7 +160,7 @@ export const DepartmentView: React.FC = () => {
               )}
 
               <div className="bg-navy-800 border border-navy-600 rounded-xl p-5">
-                <div className="flex items-start justify-between mb-5">
+                <div className="flex items-start justify-between gap-3 mb-5">
                   <div>
                     <p className="text-white font-semibold text-base">{selected.patientName}</p>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">
@@ -171,7 +173,10 @@ export const DepartmentView: React.FC = () => {
                       {t("archived", lang)}: {formatTime(selected.archivedAt)}
                     </p>
                   </div>
-                  <RiskBadge level={selected.riskLevel} score={selected.riskScore} />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <ExportPdfButton report={selected} hospital={currentUser.hospital} />
+                    <RiskBadge level={selected.riskLevel} score={selected.riskScore} />
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-5 mb-5">

@@ -6,10 +6,12 @@ import { pacsStore } from "../../lib/pacsStore";
 import { RiskGauge } from "../ui/RiskGauge";
 import { RiskBadge } from "../ui/RiskBadge";
 import { CriticalAlertModal } from "../ui/CriticalAlertModal";
+import { ExportPdfButton } from "../ui/ExportPdfButton";
 import { ImageViewer3D } from "../viewer/ImageViewer3D";
 import { HeatmapOverlay } from "../viewer/HeatmapOverlay";
 import { useToast } from "../ui/Toast";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { t } from "../../i18n";
 
 const MODALITIES: Modality[] = ["X-Ray", "CT", "MRI", "Ultrasound"];
@@ -20,6 +22,7 @@ export const RadiologistView: React.FC = () => {
   const { lang } = useLanguage();
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentUser = useCurrentUser("radiologist");
 
   const [patientName, setPatientName] = useState("");
   const [patientAge, setPatientAge] = useState("");
@@ -74,7 +77,7 @@ export const RadiologistView: React.FC = () => {
         impression: result.impression ?? "",
         recommendation: result.recommendation ?? "",
         archivedAt: new Date().toISOString(),
-        radiologistName: "Dr. Erion Basha",
+        radiologistName: currentUser.name,
         department: result.department ?? [],
         status: "analyzed",
       };
@@ -284,14 +287,17 @@ export const RadiologistView: React.FC = () => {
               {imageDataUrl && <ImageViewer3D imageDataUrl={imageDataUrl} height={280} />}
 
               <div className="bg-navy-800 border border-navy-600 rounded-xl p-5">
-                <div className="flex items-start justify-between mb-5">
+                <div className="flex items-start justify-between gap-3 mb-5">
                   <div>
                     <p className="text-white font-semibold">{report.patientName}</p>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">
                       {report.patientId} · {report.patientAge}y · {report.modality} — {report.bodyPart}
                     </p>
                   </div>
-                  <RiskBadge level={report.riskLevel} />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <ExportPdfButton report={report} hospital={currentUser.hospital} />
+                    <RiskBadge level={report.riskLevel} />
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-5 mb-5">
