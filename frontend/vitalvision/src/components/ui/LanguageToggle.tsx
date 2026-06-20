@@ -14,7 +14,7 @@ export const LanguageToggle: React.FC = () => {
             : "text-slate-400 hover:text-slate-200"
         }`}
       >
-        SQ
+        ALB
       </button>
       <button
         onClick={() => setLang("en")}
