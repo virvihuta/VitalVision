@@ -29,6 +29,13 @@ app.add_middleware(
 
 SECRET_KEY = "vitalvision-secret-key-2024"
 
+INVITE_CODES = {
+    "RAD-2026": "radiologist",
+    "DEPT-2026": "department_doctor",
+    "OPS-2026": "ops",
+}
+USED_INVITE_CODES: set[str] = set()
+
 # In-memory storage
 studies = []
 users = []
@@ -58,7 +65,7 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
-    role: str
+    invite_code: str
     hospital: Optional[str] = "General Hospital"
 
 class LoginRequest(BaseModel):
@@ -81,50 +88,99 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="Invalid token")
 
 # --- Mock report ---
-MOCK_REPORT = {
-    "riskScore": 78,
-    "riskLevel": "HIGH",
-    "findings": [
-        {
-            "region": "right lower lobe",
-            "severity": "moderate",
-            "description": "consolidation consistent with bacterial pneumonia"
-        }
-    ],
-    "impression": "There is evidence of right lower lobe consolidation most consistent with bacterial pneumonia. No pleural effusion or pneumothorax identified. Cardiac silhouette is within normal limits.",
-    "recommendation": "Clinical correlation recommended. Consider antibiotic therapy and follow-up chest X-ray in 4-6 weeks.",
-    "tags": ["pneumonia", "consolidation", "follow-up required"],
-    "studyQuality": "good"
+_MOCK_REPORTS = {
+    "en": {
+        "riskScore": 78,
+        "riskLevel": "HIGH",
+        "findings": [
+            {
+                "region": "right lower lobe",
+                "severity": "moderate",
+                "description": "consolidation consistent with bacterial pneumonia",
+            }
+        ],
+        "impression": "There is evidence of right lower lobe consolidation most consistent with bacterial pneumonia. No pleural effusion or pneumothorax identified. Cardiac silhouette is within normal limits.",
+        "recommendation": "Clinical correlation recommended. Consider antibiotic therapy and follow-up chest X-ray in 4-6 weeks.",
+        "tags": ["pneumonia", "consolidation", "follow-up required"],
+        "studyQuality": "good",
+    },
+    "sq": {
+        "riskScore": 78,
+        "riskLevel": "HIGH",
+        "findings": [
+            {
+                "region": "lobi i poshtëm i djathtë",
+                "severity": "moderate",
+                "description": "konsolidim në përputhje me pneumoni bakteriale",
+            }
+        ],
+        "impression": "Vërehet konsolidim në lobin e poshtëm të djathtë, më shumë në përputhje me pneumoni bakteriale. Nuk u identifikua efuzion pleural ose pneumotoraks. Silueta kardiake brenda kufijve normalë.",
+        "recommendation": "Rekomandohet korrelim klinik. Konsidero terapi me antibiotikë dhe rentgen kontrolli të kraharorit pas 4-6 javësh.",
+        "tags": ["pneumoni", "konsolidim", "kërkohet kontroll"],
+        "studyQuality": "good",
+    },
 }
+
+def mock_report(lang: str = "en") -> dict:
+    return _MOCK_REPORTS.get(lang, _MOCK_REPORTS["en"])
+
+# --- User helpers ---
+
+def _public_user(user: dict) -> dict:
+    return {
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "role": user["role"],
+        "hospital": user["hospital"],
+    }
+
+def _seed_demo_users() -> None:
+    if users:
+        return
+    demo = [
+        ("Dr. Arben Kola", "dr.radiolog@vitalvision.al", "password123", "radiologist", "QSUT Tirana"),
+        ("Dr. Elira Hoxha", "dr.dept@vitalvision.al", "password123", "department_doctor", "QSUT Tirana"),
+        ("Ops Admin", "ops@vitalvision.al", "password123", "ops", "QSUT Tirana"),
+    ]
+    for name, email, password, role, hospital in demo:
+        users.append({
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "email": email,
+            "password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode(),
+            "role": role,
+            "hospital": hospital,
+        })
+
+_seed_demo_users()
 
 # --- Auth Endpoints ---
 
 @app.post("/register")
 async def register(request: RegisterRequest):
+    code = request.invite_code
+    if code not in INVITE_CODES or code in USED_INVITE_CODES:
+        raise HTTPException(status_code=403, detail="Invalid invite code")
+
     for user in users:
         if user["email"] == request.email:
             raise HTTPException(status_code=400, detail="Email already registered")
-    
+
+    role = INVITE_CODES[code]
     hashed = bcrypt.hashpw(request.password.encode(), bcrypt.gensalt()).decode()
     user = {
         "id": str(uuid.uuid4()),
         "name": request.name,
         "email": request.email,
         "password": hashed,
-        "role": request.role,
-        "hospital": request.hospital
+        "role": role,
+        "hospital": request.hospital,
     }
     users.append(user)
+    USED_INVITE_CODES.add(code)
     token = create_token(user["id"])
-    return {
-        "token": token,
-        "user": {
-            "id": user["id"],
-            "name": user["name"],
-            "role": user["role"],
-            "hospital": user["hospital"]
-        }
-    }
+    return {"token": token, "user": _public_user(user)}
 
 @app.post("/login")
 async def login(request: LoginRequest):
@@ -132,15 +188,7 @@ async def login(request: LoginRequest):
         if user["email"] == request.email:
             if bcrypt.checkpw(request.password.encode(), user["password"].encode()):
                 token = create_token(user["id"])
-                return {
-                    "token": token,
-                    "user": {
-                        "id": user["id"],
-                        "name": user["name"],
-                        "role": user["role"],
-                        "hospital": user["hospital"]
-                    }
-                }
+                return {"token": token, "user": _public_user(user)}
     raise HTTPException(status_code=401, detail="Invalid email or password")
 
 @app.post("/logout")
@@ -149,21 +197,17 @@ async def logout(current_user: dict = Depends(get_current_user)):
 
 @app.get("/me")
 async def me(current_user: dict = Depends(get_current_user)):
-    return {
-        "id": current_user["id"],
-        "name": current_user["name"],
-        "role": current_user["role"],
-        "hospital": current_user["hospital"]
-    }
+    return _public_user(current_user)
 
 # --- Main Endpoints ---
 
 @app.post("/analyze")
 async def analyze(request: AnalyzeRequest):
+    lang = request.lang or "en"
     try:
-        return pytorch_analyze(image_base64=request.image, lang=request.lang or "en")
+        return pytorch_analyze(image_base64=request.image, lang=lang)
     except Exception:
-        return MOCK_REPORT
+        return mock_report(lang)
 
 @app.post("/archive")
 async def archive(request: ArchiveRequest):

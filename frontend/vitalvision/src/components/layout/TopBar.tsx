@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Activity, Building2, ChevronDown } from "lucide-react";
-import type { CurrentUser } from "../../types";
+import { Activity, Building2, LogOut } from "lucide-react";
+import type { CurrentUser, UserRole } from "../../types";
 import { generateEvent, type ActivityEvent } from "../../lib/activityFeed";
 import { useLanguage } from "../../hooks/useLanguage";
 import { t } from "../../i18n";
 
 interface TopBarProps {
   user: CurrentUser;
+  onLogout: () => void;
 }
+
+const ROLE_LABEL_KEY: Record<UserRole, "roleRadiologist" | "roleDepartmentDoctor" | "roleOps"> = {
+  radiologist: "roleRadiologist",
+  department_doctor: "roleDepartmentDoctor",
+  ops: "roleOps",
+};
 
 const TYPE_COLOR: Record<ActivityEvent["type"], string> = {
   archived: "#22D3EE",
@@ -17,14 +24,14 @@ const TYPE_COLOR: Record<ActivityEvent["type"], string> = {
   login: "#10B981",
 };
 
-export const TopBar: React.FC<TopBarProps> = ({ user }) => {
+export const TopBar: React.FC<TopBarProps> = ({ user, onLogout }) => {
   const { lang } = useLanguage();
 
   const [clock, setClock] = useState(() => new Date());
 
   const [feed, setFeed] = useState<ActivityEvent[]>(() => {
     const now = Date.now();
-    return Array.from({ length: 6 }, (_, i) => generateEvent(now - i * 12000));
+    return Array.from({ length: 6 }, (_, i) => generateEvent(now - i * 12000, lang));
   });
 
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -35,17 +42,24 @@ export const TopBar: React.FC<TopBarProps> = ({ user }) => {
     return () => clearInterval(id);
   }, []);
 
+  // Re-seed the feed when the language changes so all visible items match.
+  useEffect(() => {
+    const now = Date.now();
+    setFeed(Array.from({ length: 6 }, (_, i) => generateEvent(now - i * 12000, lang)));
+    setCurrentIdx(0);
+  }, [lang]);
+
   // Add a new event every 7 seconds
   useEffect(() => {
     const id = setInterval(() => {
       setFeed((prev) => {
-        const next = generateEvent(Date.now());
+        const next = generateEvent(Date.now(), lang);
         return [next, ...prev].slice(0, 15);
       });
       setCurrentIdx(() => 0);
     }, 7000);
     return () => clearInterval(id);
-  }, []);
+  }, [lang]);
 
   // Rotate through visible items in the ticker
   useEffect(() => {
@@ -159,9 +173,18 @@ export const TopBar: React.FC<TopBarProps> = ({ user }) => {
         </div>
         <div className="hidden sm:block">
           <p className="text-xs font-medium text-slate-200 leading-none">{user.name}</p>
-          <p className="text-[10px] text-slate-500 leading-none mt-0.5 capitalize">{user.role}</p>
+          <p className="text-[10px] text-slate-500 leading-none mt-0.5">
+            {t(ROLE_LABEL_KEY[user.role], lang)}
+          </p>
         </div>
-        <ChevronDown size={12} className="text-slate-500" />
+        <button
+          onClick={onLogout}
+          title={t("logout", lang)}
+          aria-label={t("logout", lang)}
+          className="ml-1 text-slate-500 hover:text-slate-200 transition-colors"
+        >
+          <LogOut size={14} />
+        </button>
       </div>
     </header>
   );

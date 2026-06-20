@@ -83,14 +83,14 @@ export const SerialCompare: React.FC<SerialCompareProps> = ({ before, after, onC
             className="relative bg-navy-950 select-none"
             style={{ height: 420, cursor: "ew-resize" }}
           >
-            <img src={after.imageDataUrl} alt="After" className="absolute inset-0 w-full h-full object-contain" />
+            <img src={after.imageDataUrl} alt={t("latest", lang)} className="absolute inset-0 w-full h-full object-contain" />
             <div
               className="absolute inset-0 overflow-hidden"
               style={{ width: `${pos}%` }}
             >
               <img
                 src={before.imageDataUrl}
-                alt="Before"
+                alt={t("earliest", lang)}
                 className="absolute inset-0 h-full object-contain"
                 style={{ width: containerWidth || "100%", maxWidth: "none" }}
               />

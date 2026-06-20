@@ -1,3 +1,6 @@
+import type { Language } from "../types";
+import { t } from "../i18n";
+
 export interface ActivityEvent {
   id: string;
   type: "archived" | "alert" | "viewed" | "login" | "analyzed";
@@ -14,35 +17,9 @@ const ACTORS = [
   "Dr. Genti Ruka",
 ];
 
-const DETAILS = {
-  archived: [
-    "Chest X-Ray archived to PACS",
-    "CT Abdomen archived to PACS",
-    "MRI Brain archived to PACS",
-    "Ultrasound study archived",
-  ],
-  alert: [
-    "Critical alert sent to Emergency",
-    "High-risk case flagged for Neurology",
-    "Alert dispatched to Cardiology",
-    "ICU notified of acute finding",
-  ],
-  viewed: [
-    "Viewed report RPT-1042",
-    "Reviewed CT scan",
-    "Accessed shared archive",
-    "Opened patient record",
-  ],
-  login: [
-    "Signed in to VitalVision",
-    "Started a new shift",
-  ],
-  analyzed: [
-    "AI analysis completed",
-    "New diagnostic report generated",
-    "Image processed by AI",
-  ],
-};
+const MODALITY_DETAIL = ["Chest X-Ray", "CT Abdomen", "MRI Brain", "Ultrasound"];
+const DEPARTMENTS = ["Emergency", "Neurology", "Cardiology", "ICU"];
+const REPORT_IDS = ["RPT-1042", "RPT-2088", "RPT-3301", "RPT-4455"];
 
 const TYPES: ActivityEvent["type"][] = ["archived", "alert", "viewed", "analyzed", "login"];
 
@@ -50,13 +27,32 @@ function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function generateEvent(now: number): ActivityEvent {
+function fill(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+}
+
+function detailFor(type: ActivityEvent["type"], lang: Language): string {
+  switch (type) {
+    case "archived":
+      return fill(t("actArchived", lang), { modality: pick(MODALITY_DETAIL) });
+    case "alert":
+      return fill(t("actAlert", lang), { dept: pick(DEPARTMENTS) });
+    case "viewed":
+      return fill(t("actViewed", lang), { id: pick(REPORT_IDS) });
+    case "login":
+      return t("actLogin", lang);
+    case "analyzed":
+      return t("actAnalyzed", lang);
+  }
+}
+
+export function generateEvent(now: number, lang: Language = "en"): ActivityEvent {
   const type = pick(TYPES);
   return {
     id: `evt-${now}-${Math.random().toString(36).slice(2, 7)}`,
     type,
     actor: pick(ACTORS),
-    detail: pick(DETAILS[type]),
+    detail: detailFor(type, lang),
     timestamp: now,
   };
 }

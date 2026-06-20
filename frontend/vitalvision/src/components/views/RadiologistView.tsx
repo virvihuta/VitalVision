@@ -13,7 +13,7 @@ import { useToast } from "../ui/Toast";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { playSuccess, playCritical } from "../../lib/sound";
-import { t } from "../../i18n";
+import { t, localizeBodyPart, fmtAge } from "../../i18n";
 
 const MODALITIES: Modality[] = ["X-Ray", "CT", "MRI", "Ultrasound"];
 
@@ -37,7 +37,7 @@ export const RadiologistView: React.FC = () => {
   const { showToast } = useToast();
   const { refetch } = usePACS();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const currentUser = useCurrentUser("radiologist");
+  const { user: currentUser } = useCurrentUser();
 
   const [patientName, setPatientName] = useState("");
   const [personalNumber, setPersonalNumber] = useState("");
@@ -104,7 +104,7 @@ export const RadiologistView: React.FC = () => {
         impression: result.impression ?? "",
         recommendation: result.recommendation ?? "",
         archivedAt: new Date().toISOString(),
-        radiologistName: currentUser.name,
+        radiologistName: currentUser?.name ?? "—",
         department: result.department ?? [],
         status: "analyzed",
       };
@@ -292,7 +292,7 @@ export const RadiologistView: React.FC = () => {
               </div>
               <img
                 src={imageDataUrl}
-                alt="Uploaded medical scan"
+                alt={t("altMedicalScan", lang)}
                 className="w-full rounded-lg max-h-64 object-contain bg-navy-950"
               />
             </div>
@@ -384,11 +384,11 @@ export const RadiologistView: React.FC = () => {
                   <div>
                     <p className="text-white font-semibold">{report.patientName}</p>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">
-                      {report.patientId} · {report.patientAge}y · {report.modality} — {report.bodyPart}
+                      {report.patientId} · {fmtAge(report.patientAge, lang)} · {report.modality} — {localizeBodyPart(report.bodyPart, lang)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <ExportPdfButton report={report} hospital={currentUser.hospital} />
+                    <ExportPdfButton report={report} hospital={currentUser?.hospital ?? ""} />
                     <RiskBadge level={report.riskLevel} />
                   </div>
                 </div>

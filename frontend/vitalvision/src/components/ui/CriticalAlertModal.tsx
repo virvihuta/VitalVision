@@ -3,7 +3,7 @@ import { AlertTriangle, X, ExternalLink } from "lucide-react";
 import type { DiagnosticReport } from "../../types";
 import { RiskGauge } from "./RiskGauge";
 import { useLanguage } from "../../hooks/useLanguage";
-import { t } from "../../i18n";
+import { t, localizeBodyPart, fmtAge } from "../../i18n";
 
 interface CriticalAlertModalProps {
   report: DiagnosticReport;
@@ -95,8 +95,8 @@ export const CriticalAlertModal: React.FC<CriticalAlertModalProps> = ({ report, 
             <RiskGauge score={report.riskScore} size={88} showLabel={false} animate />
             <div className="flex-1 min-w-0 space-y-1.5">
               <p className="text-white font-semibold text-sm">{report.patientName}</p>
-              <p className="text-slate-400 text-xs font-mono">{report.patientId} · {report.patientAge}y</p>
-              <p className="text-slate-400 text-xs">{report.modality} — {report.bodyPart}</p>
+              <p className="text-slate-400 text-xs font-mono">{report.patientId} · {fmtAge(report.patientAge, lang)}</p>
+              <p className="text-slate-400 text-xs">{report.modality} — {localizeBodyPart(report.bodyPart, lang)}</p>
               <p className="text-xs font-mono" style={{ color: accentColor }}>
                 {t("riskScore", lang)}: {report.riskScore}/100
               </p>

@@ -3,69 +3,70 @@ import {
   Activity,
   Bell,
   BarChart3,
+  Database,
   Users,
-  Shield,
 } from "lucide-react";
 import type { UserRole } from "../../types";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { t } from "../../i18n";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { SoundToggle } from "../ui/SoundToggle";
 
 interface SidebarProps {
   role: UserRole;
-  onRoleChange: (role: UserRole) => void;
   activeView: string;
   onViewChange: (view: string) => void;
   unreadAlerts: number;
 }
 
-const ROLES: { id: UserRole; shortLabel: string }[] = [
-  { id: "radiologist", shortLabel: "RAD" },
-  { id: "doctor", shortLabel: "DOC" },
-  { id: "ops", shortLabel: "OPS" },
-];
+type NavItem = {
+  id: string;
+  labelKey: "newAnalysis" | "pacsArchive" | "patientSearch" | "sharedArchive" | "dashboard";
+  icon: React.ReactNode;
+};
 
-const NAV_ITEMS: Record<UserRole, { id: string; labelKey: "newAnalysis" | "pacsArchive" | "patientSearch" | "sharedArchive" | "dashboard"; icon: React.ReactNode }[]> = {
+const PACS_NAV: NavItem = { id: "pacs", labelKey: "pacsArchive", icon: <Database size={16} /> };
+
+const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   radiologist: [
     { id: "analyze", labelKey: "newAnalysis", icon: <Activity size={16} /> },
-    { id: "archive", labelKey: "pacsArchive", icon: <Shield size={16} /> },
+    PACS_NAV,
   ],
-  doctor: [
+  department_doctor: [
     { id: "search", labelKey: "patientSearch", icon: <Users size={16} /> },
-    { id: "archive", labelKey: "sharedArchive", icon: <Shield size={16} /> },
+    PACS_NAV,
   ],
   ops: [
     { id: "dashboard", labelKey: "dashboard", icon: <BarChart3 size={16} /> },
+    PACS_NAV,
   ],
 };
 
 const ROLE_LABEL_KEY = {
   radiologist: "roleRadiologist",
-  doctor: "roleDoctor",
+  department_doctor: "roleDepartmentDoctor",
   ops: "roleOps",
 } as const;
 
-const ROLE_INITIALS = {
-  radiologist: "EB",
-  doctor: "AK",
-  ops: "VH",
-} as const;
-
-const ROLE_NAME = {
-  radiologist: "Dr. Erion Basha",
-  doctor: "Dr. Arta Koci",
-  ops: "Admin",
-} as const;
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export const Sidebar: React.FC<SidebarProps> = ({
   role,
-  onRoleChange,
   activeView,
   onViewChange,
   unreadAlerts,
 }) => {
   const { lang } = useLanguage();
+  const { user } = useCurrentUser();
   const navItems = NAV_ITEMS[role];
 
   return (
@@ -79,30 +80,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-sm font-semibold text-white tracking-wide">{t("appName", lang)}</span>
             <p className="text-xs text-slate-500 leading-none mt-0.5">{t("appTagline", lang)}</p>
           </div>
-        </div>
-      </div>
-
-      <div className="p-3 border-b border-navy-600">
-        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 px-1">
-          {lang === "sq" ? "Roli aktiv" : "Active role"}
-        </p>
-        <div className="flex gap-1">
-          {ROLES.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => {
-                onRoleChange(r.id);
-                onViewChange(NAV_ITEMS[r.id][0].id);
-              }}
-              className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
-                role === r.id
-                  ? "bg-clinical-blue text-white"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-navy-600"
-              }`}
-            >
-              {r.shortLabel}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -148,10 +125,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-navy-600">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-navy-500 flex items-center justify-center text-xs font-medium text-slate-300">
-            {ROLE_INITIALS[role]}
+            {user ? initials(user.name) : "—"}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-300 truncate">{ROLE_NAME[role]}</p>
+            <p className="text-xs font-medium text-slate-300 truncate">{user?.name ?? ""}</p>
             <p className="text-xs text-slate-500">{t(ROLE_LABEL_KEY[role], lang)}</p>
           </div>
           <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" title={t("online", lang)} />

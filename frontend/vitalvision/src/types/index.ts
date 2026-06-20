@@ -1,4 +1,4 @@
-export type UserRole = "radiologist" | "doctor" | "ops";
+export type UserRole = "radiologist" | "department_doctor" | "ops";
 export type Modality = "X-Ray" | "CT" | "MRI" | "Ultrasound";
 export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
 export type Language = "sq" | "en";
@@ -23,6 +23,7 @@ export interface DiagnosticReport {
   patientName: string;
   personalNumber: string;
   patientAge: number;
+  sex?: string;
   modality: Modality;
   bodyPart: string;
   imageDataUrl: string;
@@ -58,6 +59,7 @@ export interface AnalysisState {
 export interface CurrentUser {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
   hospital: string;
 }

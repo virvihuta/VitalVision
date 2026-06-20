@@ -1,14 +1,76 @@
-import { useMemo } from "react";
-import type { CurrentUser, UserRole } from "../types";
+import { useEffect, useState, useCallback } from "react";
+import {
+  login as apiLogin,
+  register as apiRegister,
+  TOKEN_KEY,
+  USER_KEY,
+} from "../api/backendApi";
+import type { CurrentUser } from "../types";
 
-// Placeholder users until Aiden's /me endpoint is live.
-// Swap this hook to call /me with the token from localStorage when ready.
-const MOCK_USERS: Record<UserRole, CurrentUser> = {
-  radiologist: { id: "u_001", name: "Dr. Erion Basha", role: "radiologist", hospital: "QSUT" },
-  doctor: { id: "u_002", name: "Dr. Arta Koci", role: "doctor", hospital: "QSUT" },
-  ops: { id: "u_003", name: "Admin", role: "ops", hospital: "QSUT" },
-};
+const listeners = new Set<() => void>();
+function notify() {
+  listeners.forEach((fn) => fn());
+}
 
-export function useCurrentUser(role: UserRole): CurrentUser {
-  return useMemo(() => MOCK_USERS[role], [role]);
+function readUser(): CurrentUser | null {
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as CurrentUser;
+  } catch {
+    return null;
+  }
+}
+
+function readToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function useCurrentUser() {
+  const [user, setUser] = useState<CurrentUser | null>(readUser);
+  const [token, setToken] = useState<string | null>(readToken);
+
+  useEffect(() => {
+    const sync = () => {
+      setUser(readUser());
+      setToken(readToken());
+    };
+    listeners.add(sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      listeners.delete(sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await apiLogin(email, password);
+    localStorage.setItem(TOKEN_KEY, res.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    notify();
+  }, []);
+
+  const register = useCallback(
+    async (
+      name: string,
+      email: string,
+      password: string,
+      inviteCode: string,
+      hospital: string = "QSUT Tirana"
+    ) => {
+      const res = await apiRegister(name, email, password, inviteCode, hospital);
+      localStorage.setItem(TOKEN_KEY, res.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+      notify();
+    },
+    []
+  );
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    notify();
+  }, []);
+
+  return { user, token, login, logout, register };
 }

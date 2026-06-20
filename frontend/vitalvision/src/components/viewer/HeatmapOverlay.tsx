@@ -3,6 +3,7 @@ import { Eye, EyeOff, Sparkles } from "lucide-react";
 import type { Finding } from "../../types";
 import { ensureBoxes } from "../../lib/regionMap";
 import { useLanguage } from "../../hooks/useLanguage";
+import { t } from "../../i18n";
 
 interface HeatmapOverlayProps {
   imageDataUrl: string;
@@ -60,7 +61,7 @@ export const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
       >
         <img
           src={imageDataUrl}
-          alt="Medical scan"
+          alt={t("altMedicalScan", lang)}
           className="max-h-full max-w-full object-contain"
         />
 

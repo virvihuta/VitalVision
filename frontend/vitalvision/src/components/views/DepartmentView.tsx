@@ -10,12 +10,12 @@ import { PatientTimeline } from "./PatientTimeline";
 import { SerialCompare } from "../viewer/SerialCompare";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { t } from "../../i18n";
+import { t, localizeBodyPart, fmtAge } from "../../i18n";
 
 export const DepartmentView: React.FC = () => {
   const { lang } = useLanguage();
   const { reports } = usePACS();
-  const currentUser = useCurrentUser("doctor");
+  const { user: currentUser } = useCurrentUser();
 
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export const DepartmentView: React.FC = () => {
                     <span>
                       {g.count > 1
                         ? `${g.count} ${t("studies", lang)}`
-                        : `${g.latest.modality} · ${g.latest.bodyPart}`}
+                        : `${g.latest.modality} · ${localizeBodyPart(g.latest.bodyPart, lang)}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1.5">
@@ -167,7 +167,7 @@ export const DepartmentView: React.FC = () => {
                   <div>
                     <p className="text-white font-semibold text-base">{selected.patientName}</p>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">
-                      {selected.patientId} · {selected.patientAge}y · {selected.modality} — {selected.bodyPart}
+                      {selected.patientId} · {fmtAge(selected.patientAge, lang)} · {selected.modality} — {localizeBodyPart(selected.bodyPart, lang)}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
                       {t("radiologist", lang)}: {selected.radiologistName}
@@ -177,7 +177,7 @@ export const DepartmentView: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <ExportPdfButton report={selected} hospital={currentUser.hospital} />
+                    <ExportPdfButton report={selected} hospital={currentUser?.hospital ?? ""} />
                     <RiskBadge level={selected.riskLevel} score={selected.riskScore} />
                   </div>
                 </div>

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Sidebar } from "./components/layout/Sidebar";
 import { TopBar } from "./components/layout/TopBar";
 import { RadiologistView } from "./components/views/RadiologistView";
 import { DepartmentView } from "./components/views/DepartmentView";
 import { AlertsView } from "./components/views/AlertsView";
 import { OpsView } from "./components/views/OpsView";
+import { PACSView } from "./components/views/PACSView";
+import { LoginView } from "./components/views/LoginView";
 import { ToastProvider, useToast } from "./components/ui/Toast";
 import { CriticalAlertModal } from "./components/ui/CriticalAlertModal";
 import { DemoModeController } from "./components/ui/DemoModeController";
@@ -16,13 +18,18 @@ import { DEMO_REPORT } from "./lib/demoMode";
 import { t } from "./i18n";
 import type { UserRole, DiagnosticReport } from "./types";
 
-function AppContent() {
+const DEFAULT_VIEW: Record<UserRole, string> = {
+  radiologist: "analyze",
+  department_doctor: "search",
+  ops: "dashboard",
+};
+
+function AuthedApp({ role }: { role: UserRole }) {
   const { lang } = useLanguage();
   const { showToast } = useToast();
-  const [role, setRole] = useState<UserRole>("radiologist");
-  const [activeView, setActiveView] = useState<string>("analyze");
+  const { user, logout } = useCurrentUser();
+  const [activeView, setActiveView] = useState<string>(DEFAULT_VIEW[role]);
   const { unreadCount, refetch } = usePACS();
-  const currentUser = useCurrentUser(role);
 
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoAlertReport, setDemoAlertReport] = useState<DiagnosticReport | null>(null);
@@ -31,12 +38,8 @@ function AppContent() {
     (action: string) => {
       switch (action) {
         case "showRadiologist":
-          setRole("radiologist");
-          setActiveView("analyze");
-          break;
         case "showAnalysis":
-          setRole("radiologist");
-          setActiveView("analyze");
+          if (role === "radiologist") setActiveView("analyze");
           break;
         case "showHeatmap":
           break;
@@ -69,16 +72,14 @@ function AppContent() {
         }
         case "showDoctor":
           setDemoAlertReport(null);
-          setRole("doctor");
           setActiveView("alerts");
           break;
         case "showOps":
-          setRole("ops");
-          setActiveView("dashboard");
+          if (role === "ops") setActiveView("dashboard");
           break;
       }
     },
-    [refetch]
+    [refetch, role]
   );
 
   const handleDemoComplete = useCallback(() => {
@@ -91,7 +92,6 @@ function AppContent() {
     setDemoAlertReport(null);
   }, []);
 
-  // Clean up the demo alert if demo stops mid-flight
   useEffect(() => {
     if (demoRunning) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,25 +99,27 @@ function AppContent() {
   }, [demoRunning]);
 
   const renderView = () => {
-    if (activeView === "analyze") return <RadiologistView />;
-    if (activeView === "search") return <DepartmentView />;
-    if (activeView === "archive") return <DepartmentView />;
+    if (activeView === "pacs") return <PACSView />;
+    if (activeView === "analyze" && role === "radiologist") return <RadiologistView />;
+    if ((activeView === "search" || activeView === "archive") && role === "department_doctor") return <DepartmentView />;
     if (activeView === "alerts") return <AlertsView />;
-    if (activeView === "dashboard") return <OpsView />;
-    return <RadiologistView />;
+    if (activeView === "dashboard" && role === "ops") return <OpsView />;
+    // Fallback to a view the role has access to.
+    if (role === "radiologist") return <RadiologistView />;
+    if (role === "department_doctor") return <DepartmentView />;
+    return <OpsView />;
   };
 
   return (
     <div className="flex min-h-screen bg-navy-950">
       <Sidebar
         role={role}
-        onRoleChange={setRole}
         activeView={activeView}
         onViewChange={setActiveView}
         unreadAlerts={unreadCount}
       />
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar user={currentUser} />
+        <TopBar user={user!} onLogout={logout} />
         <main className="flex-1">{renderView()}</main>
       </div>
 
@@ -136,6 +138,14 @@ function AppContent() {
       )}
     </div>
   );
+}
+
+function AppContent() {
+  const { user } = useCurrentUser();
+  const role = useMemo<UserRole | null>(() => user?.role ?? null, [user]);
+
+  if (!user || !role) return <LoginView />;
+  return <AuthedApp role={role} />;
 }
 
 function App() {

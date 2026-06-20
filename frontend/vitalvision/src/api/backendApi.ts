@@ -1,4 +1,5 @@
 import type {
+  CurrentUser,
   DiagnosticReport,
   Finding,
   Language,
@@ -8,7 +9,56 @@ import type {
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-interface ArchiveMetadata {
+export const TOKEN_KEY = "vv_token";
+export const USER_KEY = "vv_user";
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function readError(res: Response): Promise<string> {
+  try {
+    const data = await res.json();
+    if (typeof data?.detail === "string") return data.detail;
+    return JSON.stringify(data);
+  } catch {
+    return `Request failed: ${res.status}`;
+  }
+}
+
+export interface AuthResponse {
+  token: string;
+  user: CurrentUser;
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  inviteCode: string,
+  hospital: string = "QSUT Tirana"
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password, invite_code: inviteCode, hospital }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export interface ArchiveMetadata {
   patientName: string;
   patientId: string;
   personalNumber: string;
@@ -74,7 +124,7 @@ export async function analyzeImage(
   const base64 = imageDataUrl.split(",")[1] ?? imageDataUrl;
   const res = await fetch(`${API_URL}/analyze`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
       image: base64,
       lang,
@@ -112,7 +162,7 @@ export async function archiveStudy(
 ): Promise<{ success: boolean; studyId: string }> {
   const res = await fetch(`${API_URL}/archive`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ metadata, report }),
   });
   if (!res.ok) throw new Error(`Archive failed: ${res.status}`);
@@ -120,21 +170,21 @@ export async function archiveStudy(
 }
 
 export async function getStudies(): Promise<DiagnosticReport[]> {
-  const res = await fetch(`${API_URL}/studies`);
+  const res = await fetch(`${API_URL}/studies`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`Studies fetch failed: ${res.status}`);
   const studies: BackendStudy[] = await res.json();
   return studies.map(studyToReport);
 }
 
 export async function getAlerts(): Promise<DiagnosticReport[]> {
-  const res = await fetch(`${API_URL}/alerts`);
+  const res = await fetch(`${API_URL}/alerts`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`Alerts fetch failed: ${res.status}`);
   const studies: BackendStudy[] = await res.json();
   return studies.map(studyToReport);
 }
 
 export async function getStats(): Promise<Stats> {
-  const res = await fetch(`${API_URL}/stats`);
+  const res = await fetch(`${API_URL}/stats`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`);
   return res.json();
 }
@@ -148,6 +198,7 @@ export function studyToReport(s: BackendStudy): DiagnosticReport {
     patientName: m.patientName ?? "",
     personalNumber: m.personalNumber ?? "",
     patientAge: m.patientAge ?? 0,
+    sex: m.sex ?? "",
     modality: (m.modality ?? "X-Ray") as Modality,
     bodyPart: m.bodyPart ?? "",
     imageDataUrl: m.imageDataUrl ?? "",

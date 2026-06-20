@@ -111,6 +111,46 @@ const translations = {
     demoStep6: "Operations dashboard updated",
     demoComplete: "Demo complete",
     runningDemo: "Running demo…",
+    login: "Login",
+    register: "Register",
+    email: "Email",
+    password: "Password",
+    name: "Name",
+    inviteCode: "Invite Code",
+    inviteCodePlaceholder: "e.g. RAD-2026",
+    inviteHelper: "Contact your hospital administrator for an invite code",
+    signIn: "Sign in",
+    createAccount: "Create account",
+    invalidCredentials: "Wrong email or password",
+    invalidInviteCode: "Invalid invite code",
+    loginTitle: "Welcome to VitalVision",
+    loginSubtitle: "Sign in to access your hospital dashboard",
+    logout: "Log out",
+    demoCredsLabel: "Demo accounts",
+    demoCredsRadiologist: "Radiologist — dr.radiolog@vitalvision.al / password123",
+    demoCredsDoctor: "Doctor — dr.dept@vitalvision.al / password123",
+    demoCredsOps: "Ops — ops@vitalvision.al / password123",
+    roleDepartmentDoctor: "Department Doctor",
+    searchPatients: "Search patients...",
+    riskLevel: "Risk Level",
+    modality: "Modality",
+    selectStudy: "Select a study to view details",
+    noStudies: "No studies found",
+    sex: "Sex",
+    filterAll: "All",
+    ageSuffix: "y",
+    sevNormal: "Normal",
+    sevMild: "Mild",
+    sevModerate: "Moderate",
+    sevSevere: "Severe",
+    genericError: "Something went wrong",
+    noImage: "No image",
+    altMedicalScan: "Medical scan",
+    actArchived: "{modality} archived to PACS",
+    actAlert: "Critical alert sent to {dept}",
+    actViewed: "Viewed report {id}",
+    actLogin: "Signed in to VitalVision",
+    actAnalyzed: "AI analysis completed",
   },
   sq: {
     appName: "VitalVision",
@@ -222,6 +262,46 @@ const translations = {
     demoStep6: "Paneli operacional u përditësua",
     demoComplete: "Demo përfundoi",
     runningDemo: "Duke ekzekutuar demo…",
+    login: "Hyr",
+    register: "Regjistrohu",
+    email: "Email",
+    password: "Fjalëkalimi",
+    name: "Emri",
+    inviteCode: "Kodi i Ftesës",
+    inviteCodePlaceholder: "p.sh. RAD-2026",
+    inviteHelper: "Kontakto administratorin e spitalit për një kod ftese",
+    signIn: "Hyr në llogari",
+    createAccount: "Krijo llogari",
+    invalidCredentials: "Email ose fjalëkalim i gabuar",
+    invalidInviteCode: "Kod ftese i pavlefshëm",
+    loginTitle: "Mirë se vini në VitalVision",
+    loginSubtitle: "Hyni për të aksesuar panelin e spitalit",
+    logout: "Dil",
+    demoCredsLabel: "Llogari demo",
+    demoCredsRadiologist: "Radiolog — dr.radiolog@vitalvision.al / password123",
+    demoCredsDoctor: "Mjek — dr.dept@vitalvision.al / password123",
+    demoCredsOps: "Ops — ops@vitalvision.al / password123",
+    roleDepartmentDoctor: "Mjek Departamenti",
+    searchPatients: "Kërko pacientë...",
+    riskLevel: "Niveli i Riskut",
+    modality: "Modaliteti",
+    selectStudy: "Zgjidhni një studim për të parë detajet",
+    noStudies: "Nuk u gjetën studime",
+    sex: "Gjinia",
+    filterAll: "Të gjitha",
+    ageSuffix: "vjeç",
+    sevNormal: "Normal",
+    sevMild: "I lehtë",
+    sevModerate: "Mesatar",
+    sevSevere: "I rëndë",
+    genericError: "Diçka shkoi keq",
+    noImage: "Pa imazh",
+    altMedicalScan: "Imazh mjekësor",
+    actArchived: "{modality} u arkivua në PACS",
+    actAlert: "Alert kritik u dërgua te {dept}",
+    actViewed: "Pa raportin {id}",
+    actLogin: "Hyrje në VitalVision",
+    actAnalyzed: "Analiza me AI përfundoi",
   },
 };
 
@@ -229,6 +309,41 @@ export type TranslationKey = keyof typeof translations.en;
 
 export function t(key: TranslationKey, lang: Language): string {
   return translations[lang][key] ?? translations.en[key] ?? key;
+}
+
+const BODY_PART_KEYS: Record<string, TranslationKey> = {
+  Chest: "bpChest",
+  Abdomen: "bpAbdomen",
+  "Head / Brain": "bpHeadBrain",
+  Spine: "bpSpine",
+  Pelvis: "bpPelvis",
+  "Extremities (Upper)": "bpUpperExtremities",
+  "Extremities (Lower)": "bpLowerExtremities",
+  Neck: "bpNeck",
+  Cardiac: "bpCardiac",
+  "Full Body": "bpFullBody",
+};
+
+export function localizeBodyPart(value: string, lang: Language): string {
+  if (!value) return "";
+  const key = BODY_PART_KEYS[value];
+  return key ? t(key, lang) : value;
+}
+
+const SEVERITY_KEYS: Record<string, TranslationKey> = {
+  normal: "sevNormal",
+  mild: "sevMild",
+  moderate: "sevModerate",
+  severe: "sevSevere",
+};
+
+export function localizeSeverity(value: string, lang: Language): string {
+  const key = SEVERITY_KEYS[value];
+  return key ? t(key, lang) : value;
+}
+
+export function fmtAge(years: number, lang: Language): string {
+  return `${years}${lang === "sq" ? " " : ""}${t("ageSuffix", lang)}`;
 }
 
 export { translations };
