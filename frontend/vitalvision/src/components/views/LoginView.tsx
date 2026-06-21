@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useLanguage } from "../../hooks/useLanguage";
-import { LanguageToggle } from "../ui/LanguageToggle";
 import { t } from "../../i18n";
 
 type Tab = "login" | "register";
@@ -26,8 +25,54 @@ const inputBase: React.CSSProperties = {
   outline: "none",
 };
 
+interface LangSwitchProps {
+  lang: "sq" | "en";
+  setLang: (l: "sq" | "en") => void;
+}
+
+const LangSwitch: React.FC<LangSwitchProps> = ({ lang, setLang }) => {
+  const pill = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: "8px 18px",
+    minWidth: 56,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 1.2,
+    border: "none",
+    borderRadius: 999,
+    cursor: "pointer",
+    background: active ? ACCENT : "transparent",
+    color: active ? "#06121a" : MUTED,
+    transition: "background 180ms, color 180ms, transform 180ms",
+    transform: active ? "scale(1)" : "scale(0.97)",
+    boxShadow: active ? "0 4px 14px rgba(0,212,170,0.35)" : "none",
+  });
+  return (
+    <div
+      role="group"
+      aria-label="Language"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: 4,
+        background: "rgba(15,17,23,0.6)",
+        border: `1px solid ${BORDER}`,
+        borderRadius: 999,
+        backdropFilter: "blur(6px)",
+      }}
+    >
+      <button onClick={() => setLang("sq")} style={pill(lang === "sq")} aria-pressed={lang === "sq"}>
+        AL
+      </button>
+      <button onClick={() => setLang("en")} style={pill(lang === "en")} aria-pressed={lang === "en"}>
+        EN
+      </button>
+    </div>
+  );
+};
+
 export const LoginView: React.FC = () => {
-  const { lang } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const { login, register } = useCurrentUser();
 
   const [tab, setTab] = useState<Tab>("login");
@@ -122,8 +167,8 @@ export const LoginView: React.FC = () => {
       }}
     >
       <div style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <LanguageToggle />
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+          <LangSwitch lang={lang} setLang={setLang} />
         </div>
 
         <div
