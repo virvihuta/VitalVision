@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Activity, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useLanguage } from "../../hooks/useLanguage";
+import { Logo } from "../ui/Logo";
 import { t } from "../../i18n";
 
 type Tab = "login" | "register";
@@ -176,24 +177,11 @@ export const LoginView: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 10,
+            gap: 12,
             marginBottom: 24,
           }}
         >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: `linear-gradient(135deg, ${ACCENT}, #22d3ee)`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: `0 8px 24px ${ACCENT}33`,
-            }}
-          >
-            <Activity size={20} color="#06121a" />
-          </div>
+          <Logo className="text-ai-cyan" size={56} />
           <div>
             <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 0.3 }}>VitalVision</div>
             <div style={{ fontSize: 11, color: DIM, marginTop: 1 }}>{t("appTagline", lang)}</div>

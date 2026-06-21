@@ -12,6 +12,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { t } from "../../i18n";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { SoundToggle } from "../ui/SoundToggle";
+import { Logo } from "../ui/Logo";
 
 interface SidebarProps {
   role: UserRole;
@@ -73,9 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-56 flex-shrink-0 bg-navy-900 border-r border-navy-600 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-navy-600">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-ai-gradient shadow-lg shadow-ai-violet/20">
-            <Activity size={16} className="text-white" />
-          </div>
+          <Logo className="text-ai-cyan flex-shrink-0" size={40} />
           <div>
             <span className="text-sm font-semibold text-white tracking-wide">{t("appName", lang)}</span>
             <p className="text-xs text-slate-500 leading-none mt-0.5">{t("appTagline", lang)}</p>
