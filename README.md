@@ -1,69 +1,100 @@
 # VitalVision — AI Medical Imaging Platform
 
-Early anomaly detection, structured diagnostic reports, and real-time cross-departmental access. Built at JunctionX Tirana 2026.
+> First Place — Sfida Shëndetësi Digjitale · JunctionX Tirana 2026
+
+VitalVision is an AI-powered medical imaging platform that enables automatic anomaly detection in chest X-rays, generates structured diagnostic reports with risk scores and provides real-time cross-departmental access through an integrated PACS archive.
 
 ---
 
-## What it does
+## The Problem
 
-Doctors lose critical time when imaging results sit isolated — wrong format, wrong folder, wrong floor. This platform closes that gap.
+Hospitals lose critical diagnostic time when imaging results sit isolated — wrong format, wrong folder, wrong floor. Radiologists interpret images manually, reports don't reach the right departments, and there is no centralized system connecting the people who find problems with the people who need to act on them.
 
-A radiologist uploads a medical image. The system analyzes it and returns a structured diagnostic report with a risk score, per-region findings, severity ratings, and a clinical recommendation. The study gets archived to the patient's file. If the risk is high, the relevant departments are notified automatically.
+---
 
-Every other doctor in the hospital can search that patient and read the report instantly — no calls, no transfers, no waiting.
+## What We Built
+
+A full-stack clinical platform with three user roles — radiologist, department physician, and ops — each with a tailored view into the same underlying data.
+
+A radiologist uploads a chest X-ray. A trained EfficientNet-B0 model analyzes it instantly and returns a structured diagnostic report: findings per anatomical region, severity ratings, an overall risk score from 0 to 100, a clinical impression, and a concrete recommendation. The study is archived to the patient's permanent PACS file with one click. If the risk score exceeds 75, relevant departments are automatically notified.
+
+Every other physician in the hospital can search for a patient and read the full report in real time — no phone calls, no transfers, no waiting.
 
 ---
 
 ## Features
 
-- Image uploader with basic viewer
-- AI analysis with automatic Risk Score (0–100)
+- Chest X-ray upload with image viewer
+- EfficientNet-B0 binary classifier — trained on 5,216 images, **86.86% test accuracy**
 - Structured diagnostic report with per-finding severity
-- Automatic PACS archiving
+- Risk score (0–100) with automatic HIGH/CRITICAL alerts
+- PACS archive — searchable by patient name, personal number, modality, body part, risk level
+- Role-based access — radiologist, department doctor, ops
+- Invite-code registration system
 - Cross-departmental read-only access panel
-- Automatic alerts for high-risk studies
+- Ops dashboard with aggregate stats and trends
+- Albanian/English language toggle
+- PDF report export
 
 ---
 
-## Workflow
+## Model
+
+| Property | Value |
+|---|---|
+| Architecture | EfficientNet-B0 (pretrained ImageNet) |
+| Task | Binary classification — NORMAL vs PNEUMONIA |
+| Dataset | Kaggle Chest X-Ray Pneumonia (Guangzhou WCMC) |
+| Training images | 5,216 |
+| Test images | 624 |
+| Test accuracy | **86.86%** |
+| Sensitivity | 85.4% |
+| Specificity | 89.3% |
+| F1 (pneumonia) | 0.89 |
+| Training time | ~1.5 hours on M1 Max |
+
+Training strategy: frozen backbone for 5 epochs → full fine-tuning with cosine annealing LR, weighted random sampler for class imbalance, label smoothing, gradient clipping, early stopping.
+
+---
+
+## System Workflow
 
 ```
-Upload → AI Analysis → PACS Archive → Cross-departmental Access
+Upload → EfficientNet-B0 Analysis → Risk Score → PACS Archive → Cross-departmental Access
+                                         ↓
+                              Risk ≥ 75 → Auto-alert
 ```
 
 ---
 
-## User roles
+## Stack
 
-**Radiologist** — uploads images, reviews AI analysis, archives studies to PACS.
-
-**Department physician** — read-only access to patient studies; receives alerts for high-risk cases relevant to their department.
-
-**Ops / analytics team** — aggregate view of diagnostic activity, turnaround times, and risk trends across the hospital.
+**AI/ML** — Python, PyTorch, EfficientNet-B0, torchvision  
+**Backend** — FastAPI, Uvicorn, PyJWT, bcrypt  
+**Frontend** — React, TypeScript, Vite, Tailwind CSS  
+**Deployment** — Render (backend), Vercel (frontend)
 
 ---
 
-## Data sources
+## Data Sources
 
-- NIH Chest X-Ray Dataset
-- RSNA Pneumonia Detection Dataset
-- VinBigData Chest X-Ray Abnormalities Dataset
-- Synthetic DICOM data
+- Kaggle Chest X-Ray Pneumonia Dataset (Guangzhou Women and Children's Medical Center)
+- NIH ChestXray14 (reference)
+- RSNA Pneumonia Detection Dataset (reference)
+- VinBigData Chest X-Ray Abnormalities Dataset (reference)
 
 ---
 
 ## Team
 
-Vertex:
+| Name | Role |
+|---|---|
+| **Virvi Huta** | AI Lead — Machine Learning, Deep Learning |
+| **Atida Ashta** | Data Science |
+| **Suisa Shehi** | Frontend — UI/UX Lead |
+| **Ester Lelçi** | Frontend — Design & Branding |
+| **Aiden Hasanaj** | Backend |
 
-Aiden Hasanaj: Backend Development
+---
 
-Atida Ashta: Data Science
-
-Ester Lelçi: Frontend Development
-
-Suisa Shehi: Frontend Development
-
-Virvi Huta: Data Science
-
-Built at JunctionX Tirana 2026 — Sfida Shëndetësi Digjitale.
+Built at JunctionX Tirana 2026 · Sfida Shëndetësi Digjitale · First Place
